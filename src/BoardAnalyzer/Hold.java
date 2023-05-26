@@ -2,46 +2,88 @@ package BoardAnalyzer;
 
 import java.awt.geom.Point2D;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class Hold implements Serializable{
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public Vector2 m_pos;
-	public double m_size;
-	public double m_direction_rad;
 	
 	// Holds can be any combination of the below categories
-	public boolean m_is_jug;
-	public boolean m_is_crimp;
-	public boolean m_is_sloper;
-	public boolean m_is_pocket;
-	public boolean m_is_pinch;
-	public boolean m_is_foot;
+	public enum Types {
+		JUG("Jug"),
+		CRIMP("Crimp"),
+		SLOPER("Sloper"),
+		POCKET("Pocket"),
+		PINCH("Pinch"),
+		FOOT("Foot");
+		private String name;
+        private Types(String s) {
+            this.name = s;
+        }
+       
+        @Override
+        public String toString(){
+            return name;
+        } 
+	}
+	
+	private Vector2 m_pos;
+	private double m_size;
+	private double m_direction_rad;
+	
+	private HashSet<Types> m_types; 
 	
 	public Hold() {
 		m_pos = new Vector2(0,0);
 		m_size = 0;
 		m_direction_rad = 0;
-		m_is_jug = false;
-		m_is_crimp = false;
-		m_is_sloper = false;
-		m_is_pocket = false;
-		m_is_pinch = false;
-		m_is_foot = false;
+		m_types = new HashSet<Types>();
 	}
 	
 	public Hold(double xpos, double ypos, double size, double direction_rad) {
 		m_pos = new Vector2(xpos, ypos);
 		m_size = size;
 		m_direction_rad = direction_rad;
-		m_is_jug = false;
-		m_is_crimp = false;
-		m_is_sloper = false;
-		m_is_pocket = false;
-		m_is_pinch = false;
-		m_is_foot = false;
+		m_types = new HashSet<Types>();
+	}
+	
+	public Vector2 position() {
+		return m_pos;
+	}
+	
+	public void setPosition(Vector2 p) {
+		m_pos = p;
+	}
+	
+	public double size() {
+		return m_size;
+	}
+	
+	public void setSize(double s) {
+		m_size = s;
+	}
+	
+	public double direction() {
+		return m_direction_rad;
+	}
+	
+	public void setDirection(double dir) {
+		m_direction_rad = dir;
+	}
+	
+	public boolean isOneOf(HashSet<Hold.Types> hold_types) {
+		Set<Types> intersection = new HashSet<Types>(hold_types);
+		intersection.retainAll(m_types);
+		return !intersection.isEmpty();
+	}
+	
+	public void addType(Types t) {
+		m_types.add(t);
 	}
 	
 	public boolean contains(int x, int y) {
@@ -58,5 +100,29 @@ public class Hold implements Serializable{
 		m_pos.print();
 		System.out.println("Size: " + m_size);
 		System.out.println("Direction: " + m_direction_rad);
+	}
+	
+	public boolean isJug() {
+		return m_types.contains(Types.JUG);
+	}
+	
+	public boolean isCrimp() {
+		return m_types.contains(Types.CRIMP);
+	}
+	
+	public boolean isSloper() {
+		return m_types.contains(Types.SLOPER);
+	}
+	
+	public boolean isPocket() {
+		return m_types.contains(Types.POCKET);
+	}
+	
+	public boolean isPinch() {
+		return m_types.contains(Types.PINCH);
+	}
+	
+	public boolean isFoot() {
+		return m_types.contains(Types.FOOT);
 	}
 }

@@ -14,6 +14,8 @@ import java.util.Iterator;
 import javax.swing.event.*;
 import org.apache.commons.io.*;
 
+import BoardAnalyzer.Hold.Types;
+
 
 public class BoardFrame extends JPanel implements ActionListener, ChangeListener {
 	private enum AppState {
@@ -102,22 +104,22 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				alpha = 255;
 			}
 		}
-		if (h.m_is_crimp) {
+		if (h.isCrimp()) {
 			red = 0;
 		}
-		if (h.m_is_foot) {
+		if (h.isFoot()) {
 			red = 255;
 		}
-		if (h.m_is_jug) {
+		if (h.isJug()) {
 			blue = 0;
 		}
-		if (h.m_is_pinch) {
+		if (h.isPinch()) {
 			blue = 255;
 		}
-		if (h.m_is_pocket) {
+		if (h.isPocket()) {
 			green = 0;
 		}
-		if (h.m_is_sloper) {
+		if (h.isSloper()) {
 			green = 255;
 		}
 		
@@ -153,17 +155,17 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 					
 					Color c = getColorFromHold(h);
 					g2.setColor(c);
-					double circle_size = h.m_size;
-					double direction = h.m_direction_rad;
-					int circle_pos_x = (int)h.m_pos.x;
-					int circle_pos_y = (int)h.m_pos.y;
+					double circle_size = h.size();
+					double direction = h.direction();
+					int circle_pos_x = (int)h.position().x;
+					int circle_pos_y = (int)h.position().y;
 					int lineWidth = 5;
 
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
 						circle_size = m_hold_selection_settings.getHoldSize();
 						direction = m_hold_selection_settings.getDirection();
-						circle_pos_x = (int)m_hold_selection_settings.getHoldPosition().getX();
-						circle_pos_y = (int)m_hold_selection_settings.getHoldPosition().getY();
+						circle_pos_x = (int)m_hold_selection_settings.getHoldPosition().x;
+						circle_pos_y = (int)m_hold_selection_settings.getHoldPosition().y;
 						// Make line width thicker for circle
 						lineWidth = 7;
 					}
@@ -264,7 +266,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		} else if (e.getActionCommand() == "Generate") {
 			Analyzer a = new Analyzer(m_board);
 			File output_file = new File("heatmap.png");
-			BufferedImage image = a.getHeatmap(m_heatmap_settings.getBrightness());
+			BufferedImage image = a.getHeatmap(m_heatmap_settings.getBrightness(),
+					m_heatmap_settings.getSelectedHoldTypes());
 			try {
 				ImageIO.write(image, "png", output_file);
 			} catch (IOException e1) {
@@ -351,33 +354,44 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void saveSelectedHold() {
-		m_selected_hold.m_is_crimp = m_hold_selection_settings.isCrimp();
-		m_selected_hold.m_is_jug = m_hold_selection_settings.isJug();
-		m_selected_hold.m_is_sloper = m_hold_selection_settings.isSloper();
-		m_selected_hold.m_is_pocket = m_hold_selection_settings.isPocket();
-		m_selected_hold.m_is_pinch = m_hold_selection_settings.isPinch();
-		m_selected_hold.m_is_foot = m_hold_selection_settings.isFoot();
-		m_selected_hold.m_direction_rad = m_hold_selection_settings.getDirection();
-		m_selected_hold.m_size = m_hold_selection_settings.getHoldSize();
-		m_selected_hold.m_pos.x = m_hold_selection_settings.getHoldPosition().getX();
-		m_selected_hold.m_pos.y = m_hold_selection_settings.getHoldPosition().getY();
+		if (m_hold_selection_settings.isCrimp()) {
+			m_selected_hold.addType(Types.CRIMP);
+		}
+		if (m_hold_selection_settings.isJug()) {
+			m_selected_hold.addType(Types.JUG);
+		}
+		if (m_hold_selection_settings.isSloper()) {
+			m_selected_hold.addType(Types.SLOPER);
+		}
+		if (m_hold_selection_settings.isPocket()) {
+			m_selected_hold.addType(Types.POCKET);
+		}
+		if (m_hold_selection_settings.isPinch()) {
+			m_selected_hold.addType(Types.PINCH);
+		}
+		if (m_hold_selection_settings.isFoot()) {
+			m_selected_hold.addType(Types.FOOT);
+		}
+		m_selected_hold.setDirection(m_hold_selection_settings.getDirection());
+		m_selected_hold.setSize(m_hold_selection_settings.getHoldSize());
+		m_selected_hold.setPosition(m_hold_selection_settings.getHoldPosition());
 		deselectHold();
 	}
 	
 	private void selectHold(Hold h) {
 		m_selected_hold = h;
-		m_hold_selection_settings.setCrimp(m_selected_hold.m_is_crimp);
-		m_hold_selection_settings.setJug(m_selected_hold.m_is_jug);
-		m_hold_selection_settings.setSloper(m_selected_hold.m_is_sloper);
-		m_hold_selection_settings.setPocket(m_selected_hold.m_is_pocket);
-		m_hold_selection_settings.setPinch(m_selected_hold.m_is_pinch);
-		m_hold_selection_settings.setFoot(m_selected_hold.m_is_foot);
-		m_hold_selection_settings.setDirection(m_selected_hold.m_direction_rad);
+		m_hold_selection_settings.setCrimp(m_selected_hold.isCrimp());
+		m_hold_selection_settings.setJug(m_selected_hold.isJug());
+		m_hold_selection_settings.setSloper(m_selected_hold.isSloper());
+		m_hold_selection_settings.setPocket(m_selected_hold.isPocket());
+		m_hold_selection_settings.setPinch(m_selected_hold.isPinch());
+		m_hold_selection_settings.setFoot(m_selected_hold.isFoot());
+		m_hold_selection_settings.setDirection(m_selected_hold.direction());
 		m_hold_selection_settings.setHoldSize(
-				m_selected_hold.m_size, 
-				(int)m_selected_hold.m_pos.x, 
-				(int)m_selected_hold.m_pos.y,
-				m_selected_hold.m_size);
+				m_selected_hold.size(), 
+				(int)m_selected_hold.position().x, 
+				(int)m_selected_hold.position().y,
+				m_selected_hold.size());
 		m_state = AppState.HOLD_SELECTED;
 		m_hold_selection_settings.enableAll();
 	}
@@ -459,8 +473,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
     			m_mouse_x = e.getX();
     			m_mouse_y = e.getY();
     			
-    			int circle_centre_x = (int)(m_selected_hold.m_pos.x + m_selected_hold.m_size/2.0);
-				int circle_centre_y = (int)(m_selected_hold.m_pos.y + m_selected_hold.m_size/2.0);
+    			int circle_centre_x = (int)(m_selected_hold.position().x + m_selected_hold.size()/2.0);
+				int circle_centre_y = (int)(m_selected_hold.position().y + m_selected_hold.size()/2.0);
 				
 				int mouse_vector_x = (m_mouse_x - circle_centre_x);
 				int mouse_vector_y = (m_mouse_y - circle_centre_y);
@@ -474,9 +488,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
     			
 				m_hold_selection_settings.setHoldSize(
 						vector_size, 
-						(int)m_selected_hold.m_pos.x, 
-						(int)m_selected_hold.m_pos.y, 
-						m_selected_hold.m_size);
+						(int)m_selected_hold.position().x, 
+						(int)m_selected_hold.position().y, 
+						m_selected_hold.size());
 				repaint();
     		}
         }

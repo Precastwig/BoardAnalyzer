@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
@@ -21,38 +22,52 @@ public class Analyzer {
 		flattenBoard(board);
 	}
 	
-	private Color getPixelProximityColour(int i, int j, int brightness_factor) {
+	private double heatmapFunction(double distance, int brightness_factor) {
+		// Equation y = 
+		double distance_cap = (brightness_factor * Math.PI) / 2;
+		distance = Math.min(distance, distance_cap);
+		return  Math.max(Math.cos(distance / brightness_factor), 0.0);
+	}
+	
+	private Color getPixelProximityColour(int i, int j, int brightness_factor, HashSet<Hold.Types> hold_types_to_show) {
 		int blueness = 244;
 		int redness = 44;
+		int greenness = 44;
 		int blue_decrease_amount = 200;
 		int red_increase_amount = 200;
 		ArrayList<Hold> holds = m_flat_board.getHolds();
 		double smallest_proximity = Double.POSITIVE_INFINITY;
 		for (Iterator<Hold> it = holds.iterator(); it.hasNext();) {
 			Hold h = it.next();
-			// Pixel to hold vector
-			Vector2 pixel_to_hold_v = new Vector2(i - h.m_pos.x, j - h.m_pos.y);
-			double pixel_to_hold = pixel_to_hold_v.length();
+			if (h.isOneOf(hold_types_to_show)) {
+				// Pixel to hold vector
+				Vector2 pixel_to_hold_v = new Vector2(i - h.position().x, j - h.position().y);
+				double pixel_to_hold = pixel_to_hold_v.length() - h.size();
 //			System.out.println(ph.length());
 //			System.out.println(h.m_size);
-			if (pixel_to_hold < smallest_proximity) {
-				smallest_proximity = pixel_to_hold;
+				if (pixel_to_hold < 0.0) {
+					return new Color(
+							redness + red_increase_amount, 
+							greenness,
+							blueness - blue_decrease_amount);
+				}
+				if (pixel_to_hold < smallest_proximity) {
+					smallest_proximity = pixel_to_hold;
+				}
+				
 			}
+			
 			//System.out.println("Should be reddish");
 			
 		}
-		// Cap so we don't go into negative
-		double distance_cap = (brightness_factor * Math.PI) / 2;
-		smallest_proximity = Math.min(smallest_proximity, distance_cap);
-		// Equation y = cos(x/brightness_factor)
-		double relative_brightness = Math.max(Math.cos(smallest_proximity / brightness_factor) + 1, 0.0);
+		double relative_brightness = heatmapFunction(smallest_proximity, brightness_factor);
 		return new Color(
-				Math.min((int)(redness + (relative_brightness * red_increase_amount)), 255), 
-				44, 
-				Math.max((int)(blueness - (relative_brightness * blue_decrease_amount)), 0));
+				Math.min((int)(redness + (relative_brightness * red_increase_amount)), 244), 
+				greenness, 
+				Math.max((int)(blueness - (relative_brightness * blue_decrease_amount)), 44));
 	}
 	
-	public BufferedImage getHeatmap(int brightness_factor) {
+	public BufferedImage getHeatmap(int brightness_factor, HashSet<Hold.Types> hold_types_to_show) {
 		Vector2 image_size = m_flat_board.getBoardSize();
 		BufferedImage image = new BufferedImage(
 				(int)image_size.x, 
@@ -76,7 +91,7 @@ public class Analyzer {
 		for (int i = 0; i < image_size.x; i++) {
 			for (int j = 0; j < image_size.y; j++) {
 				// Calculate pixel
-				Color c = getPixelProximityColour(i, j, brightness_factor);
+				Color c = getPixelProximityColour(i, j, brightness_factor, hold_types_to_show);
 				image.setRGB(i, j, c.getRGB());
 			}
 		}
@@ -237,10 +252,10 @@ public class Analyzer {
 			Hold h = it.next();
 			//h.print();
 			Vector2 new_pos = getNewFlatPosition(
-					new Vector2(h.m_pos.x, h.m_pos.y),
+					new Vector2(h.position().x, h.position().y),
 					A_old, B_old, C_old, D_old,
 					A, B, C, D);
-			Vector2 old_size_pos = BoardFrame.getPointOnCircleFromRad(h.m_direction_rad, h.getCentrePoint(), h.m_size);
+			Vector2 old_size_pos = BoardFrame.getPointOnCircleFromRad(h.direction(), h.getCentrePoint(), h.size());
 			Vector2 new_size_pos = getNewFlatPosition(
 					old_size_pos,
 					A_old, B_old, C_old, D_old,

@@ -86,9 +86,8 @@ public class Board implements Serializable {
 	
 	public Hold createHold(int x, int y) {
 		Hold new_hold = new Hold();
-		new_hold.m_size = 50;
-		new_hold.m_pos.x = x - 25;
-		new_hold.m_pos.y = y - 25;
+		new_hold.setSize(50);
+		new_hold.setPosition(new Vector2(x - 25, y - 25));
 //		System.out.println(x + "   " + y);
 		m_holds.add(new_hold);
 		return new_hold;
