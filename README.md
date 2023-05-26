@@ -11,8 +11,7 @@ Java is one of the easiest languages with the best inherent GUI design, so java 
 
 ### To do
 - Fix board flattening algorithm. It currenly does some odd things
-- Proper heatmap generation, currently it makes some lovely red squares
-- Heatmap settings, based upon hold type/etc
+- Heatmap settings, based upon something etc
 - Produce Hold suggestions (and eventually based upon board preferences)
 - Display hold suggestions on the main window! (hard? Got to undo the flattening algorithm, might be fine)
 - Auto hold discovery (grumble?)
