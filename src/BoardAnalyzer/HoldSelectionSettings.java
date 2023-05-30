@@ -1,7 +1,6 @@
 package BoardAnalyzer;
 
 import java.awt.GridLayout;
-import java.awt.geom.Point2D;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -132,6 +131,7 @@ public class HoldSelectionSettings extends JPanel {
 		m_save_hold_button.setEnabled(false);
 		m_delete_hold_button.setEnabled(false);
 		m_direction_label.setText("Direction: --°");
+		m_size_label.setText("Size: --");
 	}
 	
 	public void enableAll() {

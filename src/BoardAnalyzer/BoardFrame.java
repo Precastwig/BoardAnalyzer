@@ -5,11 +5,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import javax.swing.event.*;
 import org.apache.commons.io.*;
@@ -17,7 +16,7 @@ import org.apache.commons.io.*;
 import BoardAnalyzer.Hold.Types;
 
 
-public class BoardFrame extends JPanel implements ActionListener, ChangeListener {
+public class BoardFrame extends JPanel implements ActionListener, ChangeListener, KeyListener {
 	private enum AppState {
 		LOAD_IMAGE,
 		CORNER_SET,
@@ -263,13 +262,29 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		} else if (e.getActionCommand() == "DeleteHold") {
 			deleteSelectedHold();
 			repaint();
-		} else if (e.getActionCommand() == "Generate") {
+		} else if (e.getActionCommand() == "GenerateHeatmap") {
 			Analyzer a = new Analyzer(m_board);
+			a.flattenBoard();
 			File output_file = new File("heatmap.png");
-			BufferedImage image = a.getHeatmap(m_heatmap_settings.getBrightness(),
-					m_heatmap_settings.getSelectedHoldTypes());
+			HashSet<Hold.Types> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
+			if (holdtypes.isEmpty()) {
+				holdtypes.add(Types.CRIMP);
+				holdtypes.add(Types.FOOT);
+				holdtypes.add(Types.JUG);
+				holdtypes.add(Types.PINCH);
+				holdtypes.add(Types.POCKET);
+				holdtypes.add(Types.SLOPER);
+			}
+			
+			BufferedImage image = a.getHeatmap(
+					m_heatmap_settings.getBrightness(),
+					holdtypes, 
+					m_heatmap_settings.holdTypesShouldExactlyMatch(),
+					m_heatmap_settings.holdDirectionMatters()
+					);
 			try {
 				ImageIO.write(image, "png", output_file);
+				m_instruction_label.setText("<html>Generated heatmap file</html>");
 			} catch (IOException e1) {
 				System.out.println("Failed to write output file");
 			}
@@ -277,6 +292,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			m_board.clearCorners();
 			setCornerSetState();
 			repaint();
+		} else if (e.getActionCommand() == "GenerateHold") {
+			//// Something
 		}
 	}
 	
@@ -500,4 +517,28 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
         }
     }
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		if (m_state == AppState.HOLD_SELECTED) {			
+			if (e.getKeyCode() == KeyEvent.VK_DELETE &&  e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+				deleteSelectedHold();
+				repaint();
+			}
+		}
+		
+	}
 }

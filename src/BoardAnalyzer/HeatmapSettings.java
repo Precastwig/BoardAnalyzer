@@ -1,20 +1,25 @@
 package BoardAnalyzer;
 
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Set;
-
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-
 import BoardAnalyzer.Hold.Types;
 
 public class HeatmapSettings extends JPanel {
 	JSlider m_brightness_slider;
 	ArrayList<JCheckBox> m_hold_type_selection;
+	JCheckBox m_hold_type_exact_match;
+	JCheckBox m_hold_direction_checkbox;
 	
 	public HeatmapSettings() {
+		JLabel explanationLabel = new JLabel("<html>This will create a heatmap from the various settings below, if no hold types are selected, all will be used.</html>");
+		explanationLabel.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 100));
+		add(explanationLabel);
+		
 		m_brightness_slider = new JSlider(JSlider.HORIZONTAL, 10, 200, 100);
 
 		m_brightness_slider.setMajorTickSpacing(50);
@@ -30,6 +35,14 @@ public class HeatmapSettings extends JPanel {
 			m_hold_type_selection.add(cb);
 			add(cb);
 		}
+		
+		m_hold_type_exact_match = new JCheckBox("Hold types exactly match");
+		add(m_hold_type_exact_match);
+		
+		m_hold_direction_checkbox = new JCheckBox("Hold direction matters");
+		add(m_hold_direction_checkbox);
+		
+		setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 600));
 	}
 	
 	public int getBrightness() {
@@ -53,6 +66,14 @@ public class HeatmapSettings extends JPanel {
 			}
 		}
 		return types;
+	}
+	
+	public boolean holdTypesShouldExactlyMatch() {
+		return m_hold_type_exact_match.isSelected();
+	}
+	
+	public boolean holdDirectionMatters() {
+		return m_hold_direction_checkbox.isSelected();
 	}
 	
 	public boolean isCrimpSelected() {

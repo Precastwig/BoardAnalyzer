@@ -1,10 +1,7 @@
 package BoardAnalyzer;
 
-import java.awt.geom.Point2D;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 public class Hold implements Serializable{
@@ -82,6 +79,18 @@ public class Hold implements Serializable{
 		return !intersection.isEmpty();
 	}
 	
+	public boolean isTypes(HashSet<Hold.Types> hold_types) {
+		return m_types.equals(hold_types);
+	}
+	
+	public HashSet<Hold.Types> getTypes() {
+		return m_types;
+	}
+	
+	public void addTypes(HashSet<Hold.Types> hold_types) {
+		m_types.addAll(hold_types);
+	}
+	
 	public void addType(Types t) {
 		m_types.add(t);
 	}
@@ -100,6 +109,7 @@ public class Hold implements Serializable{
 		m_pos.print();
 		System.out.println("Size: " + m_size);
 		System.out.println("Direction: " + m_direction_rad);
+		System.out.println(m_types);
 	}
 	
 	public boolean isJug() {

@@ -2,7 +2,6 @@ package BoardAnalyzer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -96,6 +95,7 @@ public class MainWindow {
         HeatmapSettings heatmap_settings_panel = new HeatmapSettings();
         BoardSettings board_settings_panel = new BoardSettings(open_button, save_settings_button, set_board_corners_button);
         HoldSelectionSettings hold_selection_settings = new HoldSelectionSettings(save_hold_button, delete_hold_button);
+        HoldGenerationSettings hold_generation_settings = new HoldGenerationSettings();
         m_board = new BoardFrame(
         		m_frame, 
         		hold_selection_settings, 
@@ -122,8 +122,8 @@ public class MainWindow {
         tabbed_panel.addTab("Board settings", board_settings_panel);
 
         // Heatmap tab
-		JButton generate_heatmap_button = new JButton("Generate");
-		generate_heatmap_button.setActionCommand("Generate");
+		JButton generate_heatmap_button = new JButton("GenerateHeatmap");
+		generate_heatmap_button.setActionCommand("GenerateHeatmap");
 		generate_heatmap_button.addActionListener(m_board);
 		generate_heatmap_button.setPreferredSize(new Dimension(PREFERRED_GENERATE_TAB_WIDTH, 20));
 		
@@ -131,6 +131,13 @@ public class MainWindow {
 		heatmap_settings_panel.setPreferredSize(new Dimension(PREFERRED_GENERATE_TAB_WIDTH, 20));
 		
 		tabbed_panel.addTab("Heatmap", heatmap_settings_panel);
+		
+		// Hold generation tab
+		JButton generate_hold_button = new JButton("GenerateHold");
+		generate_hold_button.setActionCommand("GenerateHold");
+		generate_hold_button.addActionListener(m_board);
+		generate_hold_button.setPreferredSize(new Dimension(PREFERRED_GENERATE_TAB_WIDTH, 20));
+		tabbed_panel.addTab("Hold Suggestion", hold_generation_settings);
 
 		// Sidebar section
 		JPanel eastbit = new JPanel(new GridLayout(4, 1, 0, 10));

@@ -18,6 +18,11 @@ public class Vector2 implements Serializable {
 		this.y = y;
 	}
 	
+	public Vector2(Point2D.Double p) {
+		this.x = p.x;
+		this.y = p.y;
+	}
+	
 	// Compare two vectors
     public boolean equals(Vector2 other) {
         return (this.x == other.x && this.y == other.y);
