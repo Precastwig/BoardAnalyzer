@@ -10,6 +10,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
+
 import javax.swing.event.*;
 import org.apache.commons.io.*;
 
@@ -22,6 +24,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		CORNER_SET,
 		WAITING,
 		HOLD_SELECTED,
+		BOARD_STATS_UP,
 		THINKING
 	}
 	private String DEFAULT_BOARD_IMAGE_SAVE_NAME = new String("board.jpg");
@@ -38,12 +41,15 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private Board m_board;
 	private int m_mouse_x;
 	private int m_mouse_y;
-	private boolean m_dragging;
+	private boolean m_dragging_direction;
+	private boolean m_dragging_width;
 	
 	private Hold m_selected_hold;
 	private HoldSelectionSettings m_hold_selection_settings;
+	private HoldGenerationSettings m_hold_generation_settings;
 	private BoardSettings m_board_settings;
 	private HeatmapSettings m_heatmap_settings;
+	private BoardStatistics m_board_statistics;
 	
 	private JLabel m_instruction_label;
 	
@@ -52,13 +58,17 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			HoldSelectionSettings hss, 
 			JLabel il, 
 			BoardSettings bs,
-			HeatmapSettings hs) {
+			HeatmapSettings hs,
+			HoldGenerationSettings hgs,
+			BoardStatistics bstats) {
 		m_hold_selection_settings = hss;
+		m_hold_generation_settings = hgs;
 		m_instruction_label = il;
 		m_board_settings = bs;
 		m_heatmap_settings = hs;
+		m_board_statistics = bstats;
 		m_state = AppState.LOAD_IMAGE;
-		m_dragging = false;
+		m_dragging_direction = false;
 
 		m_file_chooser = new JFileChooser();
 		m_file_chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -80,11 +90,14 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			e.printStackTrace();
 		}
 		
+		m_board_statistics.updateLabels(m_board);
+		
 		openFile(DEFAULT_BOARD_IMAGE_SAVE_NAME);
 		CanvasMouseListener mouselisten = new CanvasMouseListener();
         this.addMouseListener(mouselisten);
         this.addMouseMotionListener(mouselisten);
         this.requestFocus();
+        this.setLayout(new GridLayout(3, 1, 50, 200));
 	}
 	
 	public Color getColorFromHold(Hold h) {
@@ -125,11 +138,11 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		return new Color(red, blue, green, alpha);
 	}
 	
-	static public Vector2 getPointOnCircleFromRad(double rad, Vector2 circle_centre, double circle_size) {
+	static public Vector2 getPointOnCircleFromRad(double rad, Vector2 circle_centre, Vector2 circle_size) {
 		double unit_vector_x = Math.cos(rad);
 		double unit_vector_y = Math.sin(rad);
-		return new Vector2(circle_centre.x + (unit_vector_x * circle_size / 2.0), 
-				circle_centre.y + (unit_vector_y * circle_size / 2.0));
+		return new Vector2(circle_centre.x + (unit_vector_x * circle_size.x / 2.0), 
+				circle_centre.y + (unit_vector_y * circle_size.y / 2.0));
 	}
 	
 	@Override
@@ -154,7 +167,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 					
 					Color c = getColorFromHold(h);
 					g2.setColor(c);
-					double circle_size = h.size();
+					Vector2 circle_size = h.size();
 					double direction = h.direction();
 					int circle_pos_x = (int)h.position().x;
 					int circle_pos_y = (int)h.position().y;
@@ -185,7 +198,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 							(int)circle_centre.x, 
 							(int)circle_centre.y
 							);					
-					Shape circle = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size, circle_size);											
+					Shape circle = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);											
 					g2.draw(circle);
 				}
 			}
@@ -220,6 +233,10 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				}
 			}
 		}
+		
+		if (m_state == AppState.BOARD_STATS_UP) {
+		    super.paintComponents(g);
+		}
 	}
 	
 	@Override
@@ -240,21 +257,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			openFileOpenerDialogAndOpenFile();
 		} else if (e.getActionCommand() == "Save") {
 			saveSettings();
-			FileOutputStream f;
-			try {
-				f = new FileOutputStream(new File(DEFAULT_BOARD_SAVE_NAME));
-				ObjectOutputStream o = new ObjectOutputStream(f);
-				
-				// Write objects to file
-				o.writeObject(m_board);
-				setSavedText();
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			saveBoard();
 			repaint();
 		} else if (e.getActionCommand() == "SaveHold") {
 			saveSelectedHold();
@@ -263,37 +266,95 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			deleteSelectedHold();
 			repaint();
 		} else if (e.getActionCommand() == "GenerateHeatmap") {
-			Analyzer a = new Analyzer(m_board);
-			a.flattenBoard();
-			File output_file = new File("heatmap.png");
-			HashSet<Hold.Types> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
-			if (holdtypes.isEmpty()) {
-				holdtypes.add(Types.CRIMP);
-				holdtypes.add(Types.FOOT);
-				holdtypes.add(Types.JUG);
-				holdtypes.add(Types.PINCH);
-				holdtypes.add(Types.POCKET);
-				holdtypes.add(Types.SLOPER);
-			}
-			
-			BufferedImage image = a.getHeatmap(
-					m_heatmap_settings.getBrightness(),
-					holdtypes, 
-					m_heatmap_settings.holdTypesShouldExactlyMatch(),
-					m_heatmap_settings.holdDirectionMatters()
-					);
-			try {
-				ImageIO.write(image, "png", output_file);
-				m_instruction_label.setText("<html>Generated heatmap file</html>");
-			} catch (IOException e1) {
-				System.out.println("Failed to write output file");
-			}
+			generateHeatmap();
+			repaint();
 		} else if (e.getActionCommand() == "SetCorners") {
 			m_board.clearCorners();
 			setCornerSetState();
 			repaint();
 		} else if (e.getActionCommand() == "GenerateHold") {
+			generateHold();
+			repaint();
 			//// Something
+		} else if (e.getActionCommand() == "ShowHoldStats") {
+			showHoldStats();
+			repaint();
+		} else if (e.getActionCommand() == "ClearAllHolds") {
+			clearAllHolds();
+			repaint();
+		}
+	}
+	
+	private void clearAllHolds() {
+		m_selected_hold = null;
+		m_hold_selection_settings.disableAll();
+		m_board.clearAllHolds();
+	}
+	
+	private void showHoldStats() {
+		if (m_state != AppState.BOARD_STATS_UP) {
+			add(m_board_statistics.m_hold_type_chart);
+			m_state = AppState.BOARD_STATS_UP;			
+		} else {
+			remove(m_board_statistics.m_hold_type_chart);
+			m_state = AppState.WAITING;
+		}
+	}
+	
+	private void generateHold() {
+		Analyzer a = new Analyzer(m_board);
+		Optional<Hold> new_hold = a.generateHold(m_hold_generation_settings);
+		if (new_hold.isPresent()) {
+			m_board.addHold(new_hold.get());
+			selectHold(new_hold.get());
+			m_board_statistics.updateLabels(m_board);
+		} else { 
+			m_instruction_label.setText("Hold generation failed.");
+		}
+	}
+	
+	private void saveBoard() {
+		FileOutputStream f;
+		try {
+			f = new FileOutputStream(new File(DEFAULT_BOARD_SAVE_NAME));
+			ObjectOutputStream o = new ObjectOutputStream(f);
+			
+			// Write objects to file
+			o.writeObject(m_board);
+			setSavedText();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+	
+	private void generateHeatmap() {
+		Analyzer a = new Analyzer(m_board);
+		File output_file = new File("heatmap.png");
+		HashSet<Hold.Types> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
+		if (holdtypes.isEmpty()) {
+			holdtypes.add(Types.CRIMP);
+			holdtypes.add(Types.FOOT);
+			holdtypes.add(Types.JUG);
+			holdtypes.add(Types.PINCH);
+			holdtypes.add(Types.POCKET);
+			holdtypes.add(Types.SLOPER);
+		}
+		
+		BufferedImage image = a.getHeatmap(
+				m_heatmap_settings.getBrightness(),
+				holdtypes, 
+				m_heatmap_settings.holdTypesShouldExactlyMatch(),
+				m_heatmap_settings.holdDirectionMatters()
+				);
+		try {
+			ImageIO.write(image, "png", output_file);
+			m_instruction_label.setText("<html>Generated heatmap file</html>");
+		} catch (IOException e1) {
+			System.out.println("Failed to write output file");
 		}
 	}
 	
@@ -362,6 +423,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private void deleteSelectedHold() {
 		m_board.removeHold(m_selected_hold);
 		deselectHold();
+		m_board_statistics.updateLabels(m_board);
 	}
 	
 	private void deselectHold() {
@@ -393,6 +455,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		m_selected_hold.setSize(m_hold_selection_settings.getHoldSize());
 		m_selected_hold.setPosition(m_hold_selection_settings.getHoldPosition());
 		deselectHold();
+		m_board_statistics.updateLabels(m_board);
 	}
 	
 	private void selectHold(Hold h) {
@@ -406,15 +469,13 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		m_hold_selection_settings.setDirection(m_selected_hold.direction());
 		m_hold_selection_settings.setHoldSize(
 				m_selected_hold.size(), 
-				(int)m_selected_hold.position().x, 
-				(int)m_selected_hold.position().y,
-				m_selected_hold.size());
+				m_selected_hold);
 		m_state = AppState.HOLD_SELECTED;
 		m_hold_selection_settings.enableAll();
 	}
 		
 	private void tryClick(int x, int y) {
-       	System.out.println("Clicked x:" + x + " y: " + y);
+       	//System.out.println("Clicked x:" + x + " y: " + y);
        	if (m_state == AppState.WAITING) {
         	if (m_board.existsHold(x, y)) {
         		try {
@@ -455,7 +516,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private class CanvasMouseListener implements MouseListener, MouseMotionListener {
         @Override
         public void mouseClicked(MouseEvent e) {
-        	System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
+        	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
 
             tryClick(e.getX(),e.getY());
         }
@@ -464,14 +525,20 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         	int x = e.getX();
         	int y = e.getY();
         	
-        	if (m_state == AppState.HOLD_SELECTED && m_selected_hold.contains(x, y)) {
-        		m_dragging = true;
+        	if (m_state == AppState.HOLD_SELECTED) {
+        		if (m_selected_hold.contains(x, y)) {
+        			m_dragging_direction = true;
+        			
+        		} else {
+        			m_dragging_width = true;
+        		}
         	}
         }
         @Override
         public void mouseReleased(MouseEvent e) {
         	if (m_state == AppState.HOLD_SELECTED) {
-        		m_dragging = false;
+        		m_dragging_direction = false;
+        		m_dragging_width = false;
         	}
         }
 
@@ -486,15 +553,14 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 
         @Override
         public void mouseDragged(MouseEvent e) {
-        	if (m_state == AppState.HOLD_SELECTED && m_dragging) {
+        	if (m_dragging_direction) {
     			m_mouse_x = e.getX();
     			m_mouse_y = e.getY();
     			
-    			int circle_centre_x = (int)(m_selected_hold.position().x + m_selected_hold.size()/2.0);
-				int circle_centre_y = (int)(m_selected_hold.position().y + m_selected_hold.size()/2.0);
+    			Vector2 circle_centre = m_selected_hold.getCentrePoint();
 				
-				int mouse_vector_x = (m_mouse_x - circle_centre_x);
-				int mouse_vector_y = (m_mouse_y - circle_centre_y);
+				int mouse_vector_x = (int) (m_mouse_x - circle_centre.x);
+				int mouse_vector_y = (int) (m_mouse_y - circle_centre.y);
 				
 				double vector_size = Math.hypot(mouse_vector_x, mouse_vector_y);
 				
@@ -503,12 +569,19 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				
 				m_hold_selection_settings.setDirection(Math.atan2(mouse_unit_vector_y, mouse_unit_vector_x));
     			
+				Vector2 old_size = m_hold_selection_settings.getHoldSize();
+				double old_ratio = old_size.x / old_size.y;
+				
 				m_hold_selection_settings.setHoldSize(
-						vector_size, 
-						(int)m_selected_hold.position().x, 
-						(int)m_selected_hold.position().y, 
-						m_selected_hold.size());
+						new Vector2(old_ratio * vector_size, vector_size), 
+						m_selected_hold);
 				repaint();
+    		} else if (m_dragging_width) {
+//    			Vector2 circle_centre = m_selected_hold.getCentrePoint();
+//    			m_selected_hold
+//    			m_selected_hold.direction();
+				//// TODO Ssssometthing
+    			repaint();
     		}
         }
 

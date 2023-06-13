@@ -30,21 +30,21 @@ public class Hold implements Serializable{
 	}
 	
 	private Vector2 m_pos;
-	private double m_size;
+	private Vector2 m_size;
 	private double m_direction_rad;
 	
 	private HashSet<Types> m_types; 
 	
 	public Hold() {
 		m_pos = new Vector2(0,0);
-		m_size = 0;
+		m_size = new Vector2(0,0);
 		m_direction_rad = 0;
 		m_types = new HashSet<Types>();
 	}
 	
-	public Hold(double xpos, double ypos, double size, double direction_rad) {
-		m_pos = new Vector2(xpos, ypos);
-		m_size = size;
+	public Hold(Vector2 pos, Vector2 size, double direction_rad) {
+		m_pos = new Vector2(pos);
+		m_size = new Vector2(size);
 		m_direction_rad = direction_rad;
 		m_types = new HashSet<Types>();
 	}
@@ -57,12 +57,12 @@ public class Hold implements Serializable{
 		m_pos = p;
 	}
 	
-	public double size() {
+	public Vector2 size() {
 		return m_size;
 	}
 	
-	public void setSize(double s) {
-		m_size = s;
+	public void setSize(Vector2 s) {
+		m_size = new Vector2(s);
 	}
 	
 	public double direction() {
@@ -83,6 +83,10 @@ public class Hold implements Serializable{
 		return m_types.equals(hold_types);
 	}
 	
+	public boolean typesContain(Hold.Types t) {
+		return m_types.contains(t);
+	}
+	
 	public HashSet<Hold.Types> getTypes() {
 		return m_types;
 	}
@@ -97,11 +101,16 @@ public class Hold implements Serializable{
 	
 	public boolean contains(int x, int y) {
 		Vector2 centre = getCentrePoint();
-		return Math.pow(x - centre.x,2) + Math.pow(y - centre.y,2) < Math.pow(m_size / 2.0, 2);
+		return (Math.pow(x - centre.x,2) / Math.pow(m_size.x/2.0, 2)) + 
+			   (Math.pow(y - centre.y,2) / Math.pow(m_size.y/2.0, 2)) <= 1;
+	}
+	
+	public void setCentrePoint(Vector2 centre_point) {
+		m_pos = new Vector2(centre_point.x - (m_size.x / 2.0), centre_point.y - (m_size.y / 2.0));
 	}
 	
 	public Vector2 getCentrePoint() {
-		return new Vector2(m_pos.x + m_size/2.0, m_pos.y + m_size/2.0);
+		return new Vector2(m_pos.x + m_size.x/2.0, m_pos.y + m_size.y/2.0);
 	}
 	
 	public void print() {

@@ -1,5 +1,6 @@
 package BoardAnalyzer;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextField;
 import java.text.DecimalFormat;
@@ -14,9 +15,15 @@ public class BoardSettings extends JPanel {
 	private TextField m_width_textfield;
 	private TextField m_height_textfield;
 	
-	public BoardSettings(JButton open_button, JButton save_settings_button, JButton set_board_corners_button) {
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-        setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 1200));
+	public BoardSettings(
+			JButton open_button, 
+			JButton save_settings_button, 
+			JButton set_board_corners_button, 
+			JButton clear_holds_button) {
+		setLayout(new BorderLayout());
+		JPanel inner_panel = new JPanel();
+		inner_panel.setLayout(new BoxLayout(inner_panel, BoxLayout.PAGE_AXIS));
+		inner_panel.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 1200));
         
 //        open_button.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
 //        open_button.setMinimumSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
@@ -46,13 +53,18 @@ public class BoardSettings extends JPanel {
         height_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
         height_input.setAlignmentX(0.5f);
         
-		add(open_button);
-		add(set_board_corners_button);
-		add(Box.createVerticalGlue());
-        add(width_input);
-        add(height_input);
-        add(save_settings_button);
-        
+        inner_panel.add(open_button);
+        inner_panel.add(set_board_corners_button);
+        inner_panel.add(clear_holds_button);
+        inner_panel.add(Box.createVerticalGlue());
+        inner_panel.add(width_input);
+        inner_panel.add(height_input);
+        inner_panel.add(save_settings_button);
+		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.WEST);
+		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.EAST);
+		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.NORTH);
+		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.SOUTH);
+        add(inner_panel, BorderLayout.CENTER);
 	}
 	
 	public double getBoardWidth() throws NumberFormatException {

@@ -19,7 +19,7 @@ public class HoldSelectionSettings extends JPanel {
 	private JLabel m_direction_label;
 	private double m_direction_rad;
 	private JLabel m_size_label;
-	private double m_size;
+	private Vector2 m_size;
 	private Vector2 m_new_pos;
 	public HoldSelectionSettings(JButton save_hold_button, JButton delete_hold_button) {
 		super(new GridLayout(9, 1));
@@ -73,7 +73,7 @@ public class HoldSelectionSettings extends JPanel {
 		return m_direction_rad;
 	}
 	
-	public double getHoldSize() {
+	public Vector2 getHoldSize() {
 		return m_size;
 	}
 	
@@ -112,15 +112,15 @@ public class HoldSelectionSettings extends JPanel {
 		m_direction_label.setText("Direction: " + formatted_num.format(adjusted_degs) + "°");
 	}
 	
-	public void setHoldSize(double size, int old_position_x, int old_position_y, double old_circle_size) {
+	public void setHoldSize(
+			Vector2 size, 
+			Hold old_hold) {
 		m_size = size;
+		Vector2 centre = old_hold.getCentrePoint();
 		
-		int circle_centre_x = (int)(old_position_x + old_circle_size/2.0);
-		int circle_centre_y = (int)(old_position_y + old_circle_size/2.0);
-		
-		m_new_pos = new Vector2(circle_centre_x - m_size/2.0, circle_centre_y - m_size/2.0);
+		m_new_pos = new Vector2(centre.x - m_size.x/2.0, centre.y - m_size.y/2.0);
 		DecimalFormat formatted_num = new DecimalFormat("#.##");
-		m_size_label.setText("Size: " + formatted_num.format(m_size));
+		m_size_label.setText("Size: (" + formatted_num.format(m_size.x) + ", " + formatted_num.format(m_size.y) + ")");
 	}
 	
 	public void disableAll() {

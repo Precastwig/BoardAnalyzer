@@ -3,6 +3,8 @@ package BoardAnalyzer;
 import java.awt.geom.Point2D;
 import java.io.Serializable;
 
+import org.kynosarges.tektosyne.geometry.PointD;
+
 public class Vector2 implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public double x;
@@ -19,6 +21,16 @@ public class Vector2 implements Serializable {
 	}
 	
 	public Vector2(Point2D.Double p) {
+		this.x = p.x;
+		this.y = p.y;
+	}
+	
+	public Vector2(Vector2 v) {
+		this.x = v.x;
+		this.y = v.y;
+	}
+	
+	public Vector2(PointD p) {
 		this.x = p.x;
 		this.y = p.y;
 	}
@@ -42,6 +54,11 @@ public class Vector2 implements Serializable {
     
     public double length() {
         return Math.sqrt(x*x + y*y);
+    }
+    
+    public double distanceTo(Vector2 v) {
+    	Vector2 dis_vec = new Vector2(x -  v.x, y - v.y);
+    	return dis_vec.length();
     }
     
     public double angle() {
