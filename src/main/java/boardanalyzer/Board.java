@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.geom.Point2D;
 import java.io.Serializable;
@@ -7,9 +7,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
-
-import BoardAnalyzer.MathUtils.PerspectiveTransform;
-import BoardAnalyzer.MathUtils.Vector2;
 
 public class Board implements Serializable {
 	/**

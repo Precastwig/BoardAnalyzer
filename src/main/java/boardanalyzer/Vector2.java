@@ -1,4 +1,4 @@
-package BoardAnalyzer.MathUtils;
+package boardanalyzer;
 
 import java.awt.geom.Point2D;
 import java.io.Serializable;

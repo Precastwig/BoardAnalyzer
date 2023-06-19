@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -8,8 +8,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import javax.imageio.ImageIO;
-
-import BoardAnalyzer.MathUtils.Vector2;
 
 public class BoardSave implements Serializable {
 	private static final long serialVersionUID = 2L;

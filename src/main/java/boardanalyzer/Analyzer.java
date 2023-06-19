@@ -1,4 +1,4 @@
-package BoardAnalyzer.Analysis;
+package boardanalyzer;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -20,15 +20,6 @@ import org.kynosarges.tektosyne.geometry.RectD;
 import org.kynosarges.tektosyne.geometry.Voronoi;
 import org.kynosarges.tektosyne.geometry.VoronoiEdge;
 import org.kynosarges.tektosyne.geometry.VoronoiResults;
-
-import BoardAnalyzer.Board;
-import BoardAnalyzer.BoardFrame;
-import BoardAnalyzer.Hold;
-import BoardAnalyzer.HoldGenerationSettings;
-import BoardAnalyzer.MainWindow;
-import BoardAnalyzer.Hold.Types;
-import BoardAnalyzer.MathUtils.PerspectiveTransform;
-import BoardAnalyzer.MathUtils.Vector2;
 
 public class Analyzer {
 	public class AngleProportions {

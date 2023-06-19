@@ -1,10 +1,9 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextField;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -12,9 +11,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-
-import BoardAnalyzer.Analysis.Analyzer;
-import BoardAnalyzer.MathUtils.Vector2;
 
 public class BoardSettings extends JPanel {
 		

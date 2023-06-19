@@ -1,9 +1,8 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -88,7 +87,7 @@ public class MainWindow {
         m_frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         m_frame.setLayout(new BorderLayout());      
         try {
-			m_frame.setIconImage(ImageIO.read(new File("images/icon.png")));
+			m_frame.setIconImage(ImageIO.read(ClassLoader.getSystemResource("images/icon.png")));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.GridLayout;
 import java.text.DecimalFormat;
@@ -10,9 +10,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
-import BoardAnalyzer.Hold.Types;
-import BoardAnalyzer.MathUtils.Vector2;
 
 public class HoldSelectionSettings extends JPanel {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
@@ -62,27 +59,27 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public boolean isCrimp() {
-		return m_hold_type_checkboxes.get(Types.CRIMP.ordinal()).isSelected();
+		return m_hold_type_checkboxes.get(Hold.Types.CRIMP.ordinal()).isSelected();
 	}
 	
 	public boolean isJug() {
-		return m_hold_type_checkboxes.get(Types.JUG.ordinal()).isSelected();
+		return m_hold_type_checkboxes.get(Hold.Types.JUG.ordinal()).isSelected();
 	}
 	
 	public boolean isSloper() {
-		return m_hold_type_checkboxes.get(Types.SLOPER.ordinal()).isSelected();
+		return m_hold_type_checkboxes.get(Hold.Types.SLOPER.ordinal()).isSelected();
 	}
 	
 	public boolean isPocket() {
-		return m_hold_type_checkboxes.get(Types.POCKET.ordinal()).isSelected();
+		return m_hold_type_checkboxes.get(Hold.Types.POCKET.ordinal()).isSelected();
 	}
 	
 	public boolean isPinch() {
-		return m_hold_type_checkboxes.get(Types.PINCH.ordinal()).isSelected();
+		return m_hold_type_checkboxes.get(Hold.Types.PINCH.ordinal()).isSelected();
 	}
 	
 	public boolean isFoot() {
-		return m_hold_type_checkboxes.get(Types.FOOT.ordinal()).isSelected();
+		return m_hold_type_checkboxes.get(Hold.Types.FOOT.ordinal()).isSelected();
 	}
 	
 	public double getDirection() {
@@ -128,27 +125,27 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public void setCrimp(boolean b) {
-		m_hold_type_checkboxes.get(Types.CRIMP.ordinal()).setSelected(b);
+		m_hold_type_checkboxes.get(Hold.Types.CRIMP.ordinal()).setSelected(b);
 	}
 	
 	public void setJug(boolean b) {
-		m_hold_type_checkboxes.get(Types.JUG.ordinal()).setSelected(b);
+		m_hold_type_checkboxes.get(Hold.Types.JUG.ordinal()).setSelected(b);
 	}
 	
 	public void setSloper(boolean b) {
-		m_hold_type_checkboxes.get(Types.SLOPER.ordinal()).setSelected(b);
+		m_hold_type_checkboxes.get(Hold.Types.SLOPER.ordinal()).setSelected(b);
 	}
 	
 	public void setPocket(boolean b) {
-		m_hold_type_checkboxes.get(Types.POCKET.ordinal()).setSelected(b);
+		m_hold_type_checkboxes.get(Hold.Types.POCKET.ordinal()).setSelected(b);
 	}
 	
 	public void setPinch(boolean b) {
-		m_hold_type_checkboxes.get(Types.PINCH.ordinal()).setSelected(b);
+		m_hold_type_checkboxes.get(Hold.Types.PINCH.ordinal()).setSelected(b);
 	}
 	
 	public void setFoot(boolean b) {
-		m_hold_type_checkboxes.get(Types.FOOT.ordinal()).setSelected(b);
+		m_hold_type_checkboxes.get(Hold.Types.FOOT.ordinal()).setSelected(b);
 	}
 	
 	public void setDirection(double rad) {

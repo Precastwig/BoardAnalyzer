@@ -1,8 +1,15 @@
 /bin/
-/images/icon.psd
+/src/main/resources/images/icon.psd
 .classpath
 .project
 .settings/
 heatmap.png
-BoardAnalyzer.jar
 *.board
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+images/*
