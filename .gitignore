@@ -1,0 +1,8 @@
+/bin/
+/images/icon.psd
+.classpath
+.project
+.settings/
+heatmap.png
+BoardAnalyzer.jar
+*.board
