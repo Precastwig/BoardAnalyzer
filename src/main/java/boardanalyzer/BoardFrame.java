@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -13,9 +13,8 @@ import java.util.Iterator;
 import java.util.Optional;
 
 import javax.swing.event.*;
-import org.apache.commons.io.*;
 
-import BoardAnalyzer.Hold.Types;
+import boardanalyzer.Hold.Types;
 
 
 public class BoardFrame extends JPanel implements ActionListener, ChangeListener, KeyListener {

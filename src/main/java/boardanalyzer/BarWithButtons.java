@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.Dimension;
 import java.awt.Insets;

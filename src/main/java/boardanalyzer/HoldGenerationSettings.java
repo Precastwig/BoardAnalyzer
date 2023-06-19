@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;

@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.Dimension;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import BoardAnalyzer.Hold.Types;
+import boardanalyzer.Hold.Types;
 
 public class HeatmapSettings extends JPanel {
 	JSlider m_brightness_slider;

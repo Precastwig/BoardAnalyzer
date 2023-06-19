@@ -1,10 +1,9 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextField;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;

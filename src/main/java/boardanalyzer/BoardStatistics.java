@@ -1,9 +1,7 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -14,7 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
-import BoardAnalyzer.Hold.Types;
+import boardanalyzer.Hold.Types;
 
 public class BoardStatistics extends JPanel {
 	

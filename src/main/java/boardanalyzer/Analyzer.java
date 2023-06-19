@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -7,12 +7,9 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
-
-import javax.swing.JProgressBar;
 
 import org.kynosarges.tektosyne.geometry.PointD;
 import org.kynosarges.tektosyne.geometry.RectD;

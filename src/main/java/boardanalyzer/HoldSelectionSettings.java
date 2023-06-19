@@ -1,4 +1,4 @@
-package BoardAnalyzer;
+package boardanalyzer;
 
 import java.awt.GridLayout;
 import java.text.DecimalFormat;
@@ -10,7 +10,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import BoardAnalyzer.Hold.Types;
+import boardanalyzer.Hold.Types;
 
 public class HoldSelectionSettings extends JPanel {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
