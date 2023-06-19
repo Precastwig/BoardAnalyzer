@@ -22,6 +22,16 @@ public class Hold implements Serializable{
         private Types(String s) {
             this.name = s;
         }
+        
+        static public Types[] getHandTypes() {
+        	return new Types[] {
+        		JUG,
+        		CRIMP,
+        		SLOPER,
+        		POCKET,
+        		PINCH
+        	};
+        }
        
         @Override
         public String toString(){

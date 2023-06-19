@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 
@@ -15,7 +16,9 @@ public class HoldGenerationSettings extends JPanel implements ItemListener {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
 	
 	public HoldGenerationSettings() {
-		super(new BorderLayout());
+		setLayout(new BorderLayout());
+		JPanel inner_layout = new JPanel();
+		inner_layout.setLayout(new BoxLayout(inner_layout, BoxLayout.PAGE_AXIS));
 		m_least_common_hold_checkbox = new JCheckBox("Least Common Hold Type");
 		add(m_least_common_hold_checkbox);
 		m_hold_type_checkboxes = new ArrayList<JCheckBox>();

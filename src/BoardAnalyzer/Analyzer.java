@@ -7,9 +7,12 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
+
+import javax.swing.JProgressBar;
 
 import org.kynosarges.tektosyne.geometry.PointD;
 import org.kynosarges.tektosyne.geometry.RectD;
@@ -19,13 +22,22 @@ import org.kynosarges.tektosyne.geometry.VoronoiResults;
 
 public class Analyzer {
 	class AngleProportions {
-		private enum BucketLabel {
-			UP,
-			RIGHT_SKEW,
-			LEFT_SKEW,
-			RIGHT_SIDEPULL,
-			LEFT_SIDEPULL,
-			UNDERCUT
+		public enum BucketLabel {
+			UP("Up"),
+			RIGHT_SKEW("Slanted right"),
+			LEFT_SKEW("Slanted left"),
+			RIGHT_SIDEPULL("Right sidepull"),
+			LEFT_SIDEPULL("Left sidepull"),
+			UNDERCUT("Undercut");
+			private String name;
+			private BucketLabel(String s) {
+				this.name = s;
+			}
+			
+			@Override
+			public String toString() {
+				return name;
+			}
 		}
 		private int[] m_angle_buckets;
 		private int[] m_ideal_proportion;
@@ -78,13 +90,13 @@ public class Analyzer {
 			BucketLabel least_filled_bucket = BucketLabel.UP;
 			double smallest_proportion = Double.POSITIVE_INFINITY;
 			for (BucketLabel direction_label : BucketLabel.values()) {
-				double proportion = m_angle_buckets[direction_label.ordinal()] / m_ideal_proportion[direction_label.ordinal()]; 
+				double proportion = (double)m_angle_buckets[direction_label.ordinal()] / (double)m_ideal_proportion[direction_label.ordinal()]; 
 				if (proportion < smallest_proportion) {
 					least_filled_bucket = direction_label;
 					smallest_proportion = proportion;
 				}
 			}
-			
+			System.out.println(least_filled_bucket.toString());
 			return least_filled_bucket;
 		}
 		
@@ -104,13 +116,13 @@ public class Analyzer {
 			case RIGHT_SIDEPULL:
 				return (RIGHT_ANGLE - MARGIN) + (random_amount * 2 * MARGIN);
 			case UNDERCUT:
-				return (RIGHT_ANGLE + MARGIN) + (random_amount * (LEFT_ANGLE - HALF_CIRCLE - (2 * MARGIN)));
+				return (RIGHT_ANGLE + MARGIN) + (random_amount * (LEFT_ANGLE - (2 * MARGIN)));
 			case LEFT_SKEW:
 				return (-LEFT_ANGLE + MARGIN) + (random_amount * ((HALF_CIRCLE / 2) - (2 * MARGIN)));
 			case RIGHT_SKEW:
 				return (UP_ANGLE + MARGIN) + (random_amount * ((HALF_CIRCLE / 2) - (2 * MARGIN)));
 			}
-			
+			System.out.println("Error!");
 			// Default up
 			return 0.0;
 		}
@@ -118,14 +130,20 @@ public class Analyzer {
 	}
 	
 	private Board m_board;
+	private Vector2 m_flat_board_size;
+	private int[] m_hold_type_pref_ratio;
+	private int[] m_hold_direction_pref_ratio;
 	
 	public enum HoldGenerationReturnStatus {
 		FAILURE,
 		SUCCESS
 	}
 	
-	public Analyzer(Board board) {
+	public Analyzer(Board board, Vector2 flat_board_size, int[] hold_type_pref_ratio, int[] hold_direction_pref_ratio) {
 		m_board = board;
+		m_flat_board_size = flat_board_size;
+		m_hold_type_pref_ratio = hold_type_pref_ratio;
+		m_hold_direction_pref_ratio = hold_direction_pref_ratio;
 	}
 	
 	private double heatmapFunction(double distance, int brightness_factor) {
@@ -209,26 +227,44 @@ public class Analyzer {
 //		return new AngleStats(variance, mean_angle);
 //	}
 	
-	private double getNewHoldDirection(Board b, Vector2 position, Vector2 size) {
-		double hold_vicinity_distance = Math.min(b.getBoardHeight(), b.getBoardWidth()) / 2;
-		// Check only holds within some vicinity of the new hold that are the same type
+	private ArrayList<Hold> getHoldsInProximity(Board b, Vector2 position, double range) {
 		ArrayList<Hold> holds_in_proximity = new ArrayList<Hold>();
 		for (Iterator<Hold> it = b.getHolds().iterator(); it.hasNext();) {
 			Hold h = it.next();
-			if (h.getCentrePoint().distanceTo(position) < hold_vicinity_distance) {
+			if (h.getCentrePoint().distanceTo(position) < range) {
 				holds_in_proximity.add(h);
 			}
 		}
+		return holds_in_proximity;
+	}
+	
+	public Hold.Types suggestHoldTypes(Hold h) {
+//		Board flat_board = flattenBoard();
+//		flat_board.removeHoldAt(h.position());
+		return getLeastFilledHoldType(m_board, h.getCentrePoint(), Hold.Types.getHandTypes());
+	}
+	
+	public double suggestHoldDirection(Hold h) {
+//		Board flat_board = flattenBoard();
+//		flat_board.removeHoldAt(h.position());
+		return getNewHoldDirection(m_board, h.getCentrePoint(), h.size());
+	}
+	
+	private double getProximityDistance(Board b) {
+		return Math.min(b.getBoardHeight(), b.getBoardWidth()) / 2;
+
+	}
+	
+	private double getNewHoldDirection(Board b, Vector2 position, Vector2 size) {
+		double hold_vicinity_distance = getProximityDistance(b);
+		ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
 		if (holds_in_proximity.isEmpty()) {
 			// Default direction for this hold type.... 
 			// Whatever that is
 			// Up? (for now)
 			return -Math.PI / 2; 
 		}
-		int[] ideal_proportions = {
-			3,3,3,1,1,1
-		};
-		AngleProportions proximate_stats = new AngleProportions(holds_in_proximity, ideal_proportions);
+		AngleProportions proximate_stats = new AngleProportions(holds_in_proximity, m_hold_direction_pref_ratio);
 		return proximate_stats.getNewAngle();
 	}
 	
@@ -263,18 +299,31 @@ public class Analyzer {
 		return min_size + (Math.random() * (max_size - min_size)); 
 	}
 	
+	private Hold.Types getLeastFilledHoldType(Board b, Vector2 position, Hold.Types[] types) {
+		Hold.Types least_filled_type = types[0];
+		double hold_vicinity_distance = getProximityDistance(b);
+		double smallest_proportion = Double.POSITIVE_INFINITY;
+		ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
+		for (Hold.Types type : types) {
+			double proportion = (double)Board.countType(holds_in_proximity, type) / m_hold_type_pref_ratio[type.ordinal()];
+			if (proportion < smallest_proportion) {
+				least_filled_type = type;
+				smallest_proportion = proportion;
+			}
+		}
+		return least_filled_type;
+	}
+	
 	private HoldGenerationReturnStatus generateLeastCommonTypeHoldImpl(Board b, Hold new_hold) {
 		if (b.getHolds().size() <= 1) {
 			// No holds/one hold, do nothing
 			return HoldGenerationReturnStatus.FAILURE;
 		}
-		HashSet<Hold.Types> ignored_holds = new HashSet<Hold.Types>();
-		ignored_holds.add(Hold.Types.FOOT);
 		try {
-			Hold.Types type = b.getLeastCommonType(ignored_holds);
-			new_hold.addType(type);
 			Vector2 new_loc = getNewHoldLocation(b);
 			new_hold.setPosition(new_loc);
+			Hold.Types type = getLeastFilledHoldType(b, new_loc, Hold.Types.getHandTypes());
+			new_hold.addType(type);
 			System.out.println("Generated hold at " + new_loc.x + "," + new_loc.y);
 			double new_size;
 			new_size = getNewHoldSize(b, new_loc);
@@ -283,12 +332,13 @@ public class Analyzer {
 			double new_dir = getNewHoldDirection(b, new_loc, new_size_vector);
 			new_hold.setDirection(new_dir);
 		} catch (InvalidAlgorithmParameterException e) {
+			System.out.println(e);
 			return HoldGenerationReturnStatus.FAILURE;
 		}
 		
 		return HoldGenerationReturnStatus.SUCCESS;
 	}
-	
+		
 	public Optional<Hold> generateHold(HoldGenerationSettings settings) {
 		Board flat_board = flattenBoard();
 		Hold new_h = new Hold();
@@ -376,14 +426,18 @@ public class Analyzer {
 			HashSet<Hold.Types> hold_types_to_show, 
 			boolean hold_types_exact_match,
 			boolean hold_direction_matters) {
+		MainWindow.m_instruction_panel.m_instruction_label.setText("Generating heatmap..");
+		MainWindow.m_instruction_panel.showProgressBar();
 		Board flat_board = flattenBoard();
 		Vector2 image_size = flat_board.getBoardSize();
+		MainWindow.m_instruction_panel.updateProgressBarRange(0, (int)image_size.x);
 		BufferedImage image = new BufferedImage(
 				(int)image_size.x, 
 				(int)image_size.y, 
 				BufferedImage.TYPE_INT_RGB
 			);
 		for (int i = 0; i < image_size.x; i++) {
+			MainWindow.m_instruction_panel.updateProgressBar(i);;
 			for (int j = 0; j < image_size.y; j++) {
 				// Calculate pixel
 				Color c = getPixelProximityColour(
@@ -395,12 +449,12 @@ public class Analyzer {
 				image.setRGB(i, j, c.getRGB());
 			}
 		}
-		
+		MainWindow.m_instruction_panel.hideProgressBar();
 		return image;
 	}
 	
-	private Vector2 getFlatBoardSize(Board old_board) {
-		double ratio = old_board.getBoardWidth() / old_board.getBoardHeight();
+	private Vector2 getFlatBoardSize() {
+		double ratio = m_flat_board_size.x / m_flat_board_size.y;
 		
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		double screen_width = screenSize.getWidth();
@@ -454,7 +508,7 @@ public class Analyzer {
 	
 	private Board flattenBoard() {
 		Board flat_board = new Board();
-		Vector2 flat_board_size = getFlatBoardSize(m_board);
+		Vector2 flat_board_size = getFlatBoardSize();
 		flat_board.setBoardDimensions(flat_board_size.x, flat_board_size.y);
 		
 		flat_board.addCorner(new Vector2(0,0));
@@ -481,7 +535,7 @@ public class Analyzer {
 			Hold flat_hold = 
 					new Hold(new_pos, 
 							new Vector2(old_size_ratio * new_direction_size_vector.length(), new_direction_size_vector.length()), 
-							new_direction_size_vector.angle());
+							h.direction());
 			flat_hold.addTypes(h.getTypes());
 			flat_board.addHold(flat_hold);
 		}

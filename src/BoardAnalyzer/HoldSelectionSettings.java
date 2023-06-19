@@ -16,12 +16,18 @@ public class HoldSelectionSettings extends JPanel {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
 	private JButton m_save_hold_button ;
 	private JButton m_delete_hold_button;
+	private JButton m_suggest_type_button;
+	private JButton m_suggest_direction_button;
 	private JLabel m_direction_label;
 	private double m_direction_rad;
 	private JLabel m_size_label;
 	private Vector2 m_size;
 	private Vector2 m_new_pos;
-	public HoldSelectionSettings(JButton save_hold_button, JButton delete_hold_button) {
+	public HoldSelectionSettings(
+			JButton save_hold_button, 
+			JButton delete_hold_button, 
+			JButton suggest_type_button, 
+			JButton suggest_direction_button) {
 		super(new GridLayout(9, 1));
 		m_hold_type_checkboxes = new ArrayList<JCheckBox>();
 		for (Hold.Types hold : Hold.Types.values()) {
@@ -41,6 +47,12 @@ public class HoldSelectionSettings extends JPanel {
 		
 		m_delete_hold_button = delete_hold_button;
 		add(m_delete_hold_button);
+		
+		m_suggest_type_button = suggest_type_button;
+		add(m_suggest_type_button);
+		
+		m_suggest_direction_button = suggest_direction_button;
+		add(m_suggest_direction_button);
 		
 		disableAll();
 	}
@@ -79,6 +91,36 @@ public class HoldSelectionSettings extends JPanel {
 	
 	public Vector2 getHoldPosition() {
 		return m_new_pos;
+	}
+	
+	public void setToHoldType(Hold.Types type) {
+		setCrimp(true);
+		setJug(false);
+		setSloper(false);
+		setPocket(false);
+		setFoot(false);
+		setPinch(false);
+		
+		switch (type) {
+		case CRIMP:
+			setCrimp(true);
+			break;
+		case JUG:
+			setJug(true);
+			break;
+		case SLOPER:
+			setSloper(true);
+			break;
+		case POCKET:
+			setPocket(true);
+			break;
+		case FOOT:
+			setFoot(true);
+			break;
+		case PINCH:
+			setPinch(true);
+			break;
+		}
 	}
 	
 	public void setCrimp(boolean b) {
@@ -130,6 +172,8 @@ public class HoldSelectionSettings extends JPanel {
 		}
 		m_save_hold_button.setEnabled(false);
 		m_delete_hold_button.setEnabled(false);
+		m_suggest_type_button.setEnabled(false);
+		m_suggest_direction_button.setEnabled(false);
 		m_direction_label.setText("Direction: --°");
 		m_size_label.setText("Size: --");
 	}
@@ -141,5 +185,7 @@ public class HoldSelectionSettings extends JPanel {
 		}
 		m_delete_hold_button.setEnabled(true);
 		m_save_hold_button.setEnabled(true);
+		m_suggest_type_button.setEnabled(true);
+		m_suggest_direction_button.setEnabled(true);
 	}
 }

@@ -27,8 +27,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		BOARD_STATS_UP,
 		THINKING
 	}
-	private String DEFAULT_BOARD_IMAGE_SAVE_NAME = new String("board.jpg");
-	private String DEFAULT_BOARD_SAVE_NAME = new String("saved.board");
+	static public String BOARD_EXTENSION = new String(".board");
+	private String DEFAULT_BOARD_NAME = new String("name");
 	private static final long serialVersionUID = 1L;
 	private static final Font DEFAULT_FONT = new Font("Times New Roman",
             Font.BOLD,
@@ -36,9 +36,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private AppState m_state;
 	private JFileChooser m_file_chooser;
 	
-	private Image m_image;
-	
-	private Board m_board;
+	private BoardSave m_board_save;
+	private File m_current_loaded_board_file;
 	private int m_mouse_x;
 	private int m_mouse_y;
 	private boolean m_dragging_direction;
@@ -50,20 +49,16 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private BoardSettings m_board_settings;
 	private HeatmapSettings m_heatmap_settings;
 	private BoardStatistics m_board_statistics;
-	
-	private JLabel m_instruction_label;
-	
+		
 	public BoardFrame(
 			JFrame fram, 
 			HoldSelectionSettings hss, 
-			JLabel il, 
 			BoardSettings bs,
 			HeatmapSettings hs,
 			HoldGenerationSettings hgs,
 			BoardStatistics bstats) {
 		m_hold_selection_settings = hss;
 		m_hold_generation_settings = hgs;
-		m_instruction_label = il;
 		m_board_settings = bs;
 		m_heatmap_settings = hs;
 		m_board_statistics = bstats;
@@ -73,31 +68,25 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		m_file_chooser = new JFileChooser();
 		m_file_chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		
-		FileInputStream fi;
 		try {
-			fi = new FileInputStream(new File(DEFAULT_BOARD_SAVE_NAME));
-			ObjectInputStream oi = new ObjectInputStream(fi);
-			m_board = (Board)oi.readObject();
-			m_board_settings.setBoardDimensions(m_board.getBoardWidth(), m_board.getBoardHeight());
-		} catch (FileNotFoundException e) {
-			// Ignore no file found, we don't care
-			m_board = new Board();
-		} catch (IOException e) {
-			System.out.println("Error initializing stream");
-		} catch (ClassNotFoundException e) {
+			File f = new File(DEFAULT_BOARD_NAME + BOARD_EXTENSION);
+			if (!openSavedBoard(f)) {
+				// If a board can't be opened, then create a new one
+				m_board_save = new BoardSave();
+			}
+		} catch (ClassNotFoundException | IOException e) {
 			// TODO Auto-generated catch block
-			System.out.println("Saved board object corrupted");
 			e.printStackTrace();
 		}
 		
-		m_board_statistics.updateLabels(m_board);
+		m_board_statistics.updateLabels(m_board_save.m_board);
 		
-		openFile(DEFAULT_BOARD_IMAGE_SAVE_NAME);
 		CanvasMouseListener mouselisten = new CanvasMouseListener();
         this.addMouseListener(mouselisten);
         this.addMouseMotionListener(mouselisten);
         this.requestFocus();
         this.setLayout(new GridLayout(3, 1, 50, 200));
+        this.setBackground(Color.white);
 	}
 	
 	public Color getColorFromHold(Hold h) {
@@ -156,11 +145,11 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	    		RenderingHints.VALUE_ANTIALIAS_ON);
 	    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
 	    		RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		if (m_state != AppState.LOAD_IMAGE) {
-			g2.drawImage(m_image, 0, 0, (int)this.getSize().getWidth(), (int)this.getSize().getHeight(),this);			
+		if (m_state != AppState.LOAD_IMAGE && m_board_save.m_board_image != null) {
+			g2.drawImage(m_board_save.m_board_image, 0, 0, (int)this.getSize().getWidth(), (int)this.getSize().getHeight(),this);			
 		
 			// Draw holds
-			ArrayList<Hold> holds = m_board.getHolds();
+			ArrayList<Hold> holds = m_board_save.m_board.getHolds();
 			if (!holds.isEmpty()) {		
 				for (Iterator<Hold> it = holds.iterator(); it.hasNext();) {
 					Hold h = it.next();
@@ -204,7 +193,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			}
 			
 			// Draw board corners and lines between them
-			ArrayList<Vector2> corners = m_board.getCorners();
+			ArrayList<Vector2> corners = m_board_save.m_board.getCorners();
 			g2.setColor(Color.BLACK);
 			g2.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
 			
@@ -252,43 +241,118 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand() == "OpenFile") {
-			System.out.println("Open file");
-			openFileOpenerDialogAndOpenFile();
+		if (e.getActionCommand() == "NewBoard") {
+			newBoard();
+		} else if (e.getActionCommand() == "OpenBoard") {
+			openBoard();
 		} else if (e.getActionCommand() == "Save") {
 			saveSettings();
-			saveBoard();
-			repaint();
+			saveBoard(m_current_loaded_board_file);
 		} else if (e.getActionCommand() == "SaveHold") {
 			saveSelectedHold();
-			repaint();
 		} else if (e.getActionCommand() == "DeleteHold") {
 			deleteSelectedHold();
-			repaint();
 		} else if (e.getActionCommand() == "GenerateHeatmap") {
 			generateHeatmap();
-			repaint();
 		} else if (e.getActionCommand() == "SetCorners") {
-			m_board.clearCorners();
+			m_board_save.m_board.clearCorners();
 			setCornerSetState();
-			repaint();
 		} else if (e.getActionCommand() == "GenerateHold") {
 			generateHold();
-			repaint();
 			//// Something
 		} else if (e.getActionCommand() == "ShowHoldStats") {
 			showHoldStats();
-			repaint();
 		} else if (e.getActionCommand() == "ClearAllHolds") {
 			clearAllHolds();
-			repaint();
+		} else if (e.getActionCommand() == "SuggestHoldType") {
+			suggestHoldType();
+		} else if (e.getActionCommand() == "SuggestHoldDirection") {
+			suggestHoldDirection();
 		}
+		repaint();
+	}
+	
+	private void suggestHoldType() {
+		if (m_selected_hold != null) {
+			Analyzer a = new Analyzer(
+					m_board_save.m_board, 
+					m_board_save.m_board_dimensions,
+					m_board_save.m_hold_type_ratio, 
+					m_board_save.m_hold_direction_ratio);
+			Hold.Types new_type = a.suggestHoldTypes(m_selected_hold);
+			m_hold_selection_settings.setToHoldType(new_type);
+		}
+	}
+	
+	private void suggestHoldDirection() {
+		if (m_selected_hold != null) {
+			Analyzer a = new Analyzer(m_board_save.m_board, 
+					m_board_save.m_board_dimensions,
+					m_board_save.m_hold_type_ratio, 
+					m_board_save.m_hold_direction_ratio);
+			double new_dir = a.suggestHoldDirection(m_selected_hold);
+			m_hold_selection_settings.setDirection(new_dir);
+		}
+	}
+	
+	private int showOpenBoardConfirmDialog() {
+		return JOptionPane.showConfirmDialog(
+				this, 
+				"You already have a board open, any unsaved changes will be lost, are you sure?",
+				"Are you sure?", 
+				JOptionPane.YES_NO_OPTION, 
+				JOptionPane.QUESTION_MESSAGE);
+	}
+	
+	private void openBoard() {
+		if (m_board_save.m_board_image != null) {
+			int choice = showOpenBoardConfirmDialog();
+			if (choice == JOptionPane.NO_OPTION || choice == JOptionPane.CLOSED_OPTION) {
+				return;
+			}
+		}
+		m_file_chooser.setFileFilter(new BoardFileFilter());
+		int returnVal = m_file_chooser.showDialog(this, "Open Board Save");
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File chosen_file = m_file_chooser.getSelectedFile();
+			System.out.println(chosen_file.getAbsolutePath());
+			try {
+				openSavedBoard(chosen_file);
+			} catch (ClassNotFoundException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void newBoard() {
+		if (m_board_save.m_board_image != null) {
+			int choice = showOpenBoardConfirmDialog();
+			if (choice == JOptionPane.NO_OPTION || choice == JOptionPane.CLOSED_OPTION) {
+				return;
+			}
+		}
+		String input = JOptionPane.showInputDialog(null, "Enter board name");
+		m_current_loaded_board_file = new File(input + BOARD_EXTENSION);
+		if (m_current_loaded_board_file.exists()) {
+			int choice = JOptionPane.showConfirmDialog(
+					this, 
+					"A board with this name already exists, would you like to overwrite it?",
+					"This board already exists", 
+					JOptionPane.YES_NO_OPTION, 
+					JOptionPane.QUESTION_MESSAGE);
+			if (choice != JOptionPane.YES_OPTION) {
+				return;
+			}
+		}
+		openFileOpenerDialogAndOpenFile();
+		saveBoard(m_current_loaded_board_file);
 	}
 	
 	private void clearAllHolds() {
 		m_selected_hold = null;
 		m_hold_selection_settings.disableAll();
-		m_board.clearAllHolds();
+		m_board_save.m_board.clearAllHolds();
 	}
 	
 	private void showHoldStats() {
@@ -302,25 +366,30 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void generateHold() {
-		Analyzer a = new Analyzer(m_board);
+		Analyzer a = new Analyzer(m_board_save.m_board, 
+				m_board_save.m_board_dimensions,
+				m_board_save.m_hold_type_ratio, 
+				m_board_save.m_hold_direction_ratio);
 		Optional<Hold> new_hold = a.generateHold(m_hold_generation_settings);
 		if (new_hold.isPresent()) {
-			m_board.addHold(new_hold.get());
+			m_board_save.m_board.addHold(new_hold.get());
 			selectHold(new_hold.get());
-			m_board_statistics.updateLabels(m_board);
+			m_board_statistics.updateLabels(m_board_save.m_board);
 		} else { 
-			m_instruction_label.setText("Hold generation failed.");
+			MainWindow.m_instruction_panel.m_instruction_label.setText("Hold generation failed.");
 		}
 	}
 	
-	private void saveBoard() {
+	private void saveBoard(File file) {
 		FileOutputStream f;
 		try {
-			f = new FileOutputStream(new File(DEFAULT_BOARD_SAVE_NAME));
+			f = new FileOutputStream(file);
 			ObjectOutputStream o = new ObjectOutputStream(f);
 			
 			// Write objects to file
-			o.writeObject(m_board);
+			o.writeObject(m_board_save);
+			o.flush();
+			o.close();
 			setSavedText();
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
@@ -332,7 +401,10 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void generateHeatmap() {
-		Analyzer a = new Analyzer(m_board);
+		Analyzer a = new Analyzer(m_board_save.m_board, 
+				m_board_save.m_board_dimensions,
+				m_board_save.m_hold_type_ratio, 
+				m_board_save.m_hold_direction_ratio);
 		File output_file = new File("heatmap.png");
 		HashSet<Hold.Types> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
 		if (holdtypes.isEmpty()) {
@@ -352,7 +424,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				);
 		try {
 			ImageIO.write(image, "png", output_file);
-			m_instruction_label.setText("<html>Generated heatmap file</html>");
+			MainWindow.m_instruction_panel.m_instruction_label.setText("<html>Generated heatmap file</html>");
 		} catch (IOException e1) {
 			System.out.println("Failed to write output file");
 		}
@@ -360,70 +432,109 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	
 	private void saveSettings() {
 		try {
-			m_board.setBoardDimensions(m_board_settings.getBoardWidth(), m_board_settings.getBoardHeight());
+			m_board_save.m_board_dimensions = m_board_settings.getBoardDimensions();
 		} catch (java.lang.NumberFormatException e) {
 			System.out.println("Board settings not saved, error in width or height");
 		}
+		m_board_save.m_hold_type_ratio = m_board_settings.getHoldTypeRatio();
+		m_board_save.m_hold_direction_ratio = m_board_settings.getHoldDirectionRatio();
 	}
 	
 	private void openFileOpenerDialogAndOpenFile() {
-		int returnVal = m_file_chooser.showOpenDialog(this);
+		m_file_chooser.setFileFilter(new ImageFileFilter());
+		int returnVal = m_file_chooser.showDialog(this, "Open Image");
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File chosen_file = m_file_chooser.getSelectedFile();
-            //This is where a real application would open the file.
-            System.out.println("Opening: " + chosen_file.getName() + ".");
-            
-            String file_name = "board." + FilenameUtils.getExtension(chosen_file.getName());
-            File new_loc = new File(file_name);
-            try {
-				FileUtils.copyFile(chosen_file, new_loc);
-				openFile(file_name);
-			} catch (IOException e1) {
-				e1.printStackTrace();
+			try {
+				openImageFile(chosen_file);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
         }
 	}
 	
-	private void openFile(String path) {
-		File file = new File(path);
-        try {
-			m_image = ImageIO.read(file);
-			int new_width = m_image.getWidth(this) + MainWindow.PREFERRED_GENERATE_TAB_WIDTH;
-			int new_height = m_image.getHeight(this) + MainWindow.PREFERRED_BOTTOM_BAR_HEIGHT;
-			
-			double new_ratio = (double)new_width / (double)new_height;
-			
-			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-			double screen_width = screenSize.getWidth();
-			double screen_height = screenSize.getHeight();
-			
-			if (new_width > screen_width) {
-				new_width = (int)screen_width - 50;
-				new_height = (int)(new_width / new_ratio);
+	private void openImageFile(File file) throws IOException {
+		if (m_board_save.m_board_image != null) {
+			// We already have an image, which means we should ask if we should 
+			// also clear the save
+			int result = JOptionPane.showConfirmDialog(null, "Board data already exists, Would you like to clear it?");
+			if (result == JOptionPane.YES_OPTION) {
+				// Clear board data
+			} else if (result == JOptionPane.NO_OPTION) {
+				///// TODO
+				// Do something clever
+			} else {
+				// Do nothing
+				return;
 			}
-			if (new_height > screen_height) {
-				new_height = (int)screen_height - 50;
-				new_width = (int)(new_height * new_ratio);
-			}
+		}
+		FileInputStream fis = new FileInputStream(file);
+		m_board_save.m_board_image = ImageIO.read(fis);
+		if (m_board_save.m_board_image == null) {
+			throw new IOException("ImageIO can only load GIF PNG JPEG BMP and WBMP");
+		}
+		int new_width = m_board_save.m_board_image.getWidth(this);
+		int new_height = m_board_save.m_board_image.getHeight(this);
+		
+		double new_ratio = (double)new_width / (double)new_height;
+		
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		double screen_width = screenSize.getWidth();
+		double screen_height = screenSize.getHeight();
+		
+		if (new_width > screen_width) {
+			new_width = (int)screen_width - 50;
+			new_height = (int)(new_width / new_ratio);
+		}
+		if (new_height > screen_height) {
+			new_height = (int)screen_height - 50;
+			new_width = (int)(new_height * new_ratio);
+		}
+		MainWindow.m_frame.setSize(
+				new_width, 
+				new_height);
+		m_board_save.m_board.setBoardDimensions(new_width, new_height);
+		if (m_board_save.m_board.areAllCornersSet()) {
+			setWaitingState();
+		} else {
+			setCornerSetState();
+		}
+		repaint();
+	}
+	
+	private boolean openSavedBoard(File f) throws IOException, ClassNotFoundException {
+		FileInputStream fi;
+		try {
+			fi = new FileInputStream(f);
+			ObjectInputStream oi = new ObjectInputStream(fi);
+			m_board_save = (BoardSave)oi.readObject();
+			oi.close();
+			m_board_settings.setBoardDimensions(m_board_save.m_board_dimensions);
 			MainWindow.m_frame.setSize(
-					new_width, 
-					new_height);
-			if (m_board.areAllCornersSet()) {
+					(int)m_board_save.m_board.getBoardWidth(), 
+					(int)m_board_save.m_board.getBoardHeight());
+			if (m_board_save.m_board.areAllCornersSet()) {
 				setWaitingState();
 			} else {
 				setCornerSetState();
 			}
+			m_current_loaded_board_file = f;
+			m_board_statistics.updateLabels(m_board_save.m_board);
 			repaint();
-		} catch (IOException e1) {
-			System.out.println("Image not available.");
+		} catch (FileNotFoundException e) {
+			System.out.println("File not found");
+			System.out.println(f.getAbsolutePath());
+			return false;
 		}
+		return true;
 	}
 	
 	private void deleteSelectedHold() {
-		m_board.removeHold(m_selected_hold);
+		m_board_save.m_board.removeHold(m_selected_hold);
 		deselectHold();
-		m_board_statistics.updateLabels(m_board);
+		m_board_statistics.updateLabels(m_board_save.m_board);
 	}
 	
 	private void deselectHold() {
@@ -455,7 +566,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		m_selected_hold.setSize(m_hold_selection_settings.getHoldSize());
 		m_selected_hold.setPosition(m_hold_selection_settings.getHoldPosition());
 		deselectHold();
-		m_board_statistics.updateLabels(m_board);
+		m_board_statistics.updateLabels(m_board_save.m_board);
 	}
 	
 	private void selectHold(Hold h) {
@@ -477,9 +588,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private void tryClick(int x, int y) {
        	//System.out.println("Clicked x:" + x + " y: " + y);
        	if (m_state == AppState.WAITING) {
-        	if (m_board.existsHold(x, y)) {
+        	if (m_board_save.m_board.existsHold(x, y)) {
         		try {
-					selectHold(m_board.getHold(x, y));
+					selectHold(m_board_save.m_board.getHold(x, y));
 				} catch (IllegalAccessException e) {
 					// TODO Auto-generated catch block
 					System.out.println("Can't find hold! Logic mismatch in existshold and gethold");
@@ -487,11 +598,11 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				}
         	} else {        			
 	        	// No hold where we clicked
-        		selectHold(m_board.createHold(x, y));
+        		selectHold(m_board_save.m_board.createHold(x, y));
         	}
         } else if (m_state == AppState.CORNER_SET) {
-        	m_board.addCorner(new Vector2(x, y));
-        	if (m_board.areAllCornersSet()) {
+        	m_board_save.m_board.addCorner(new Vector2(x, y));
+        	if (m_board_save.m_board.areAllCornersSet()) {
         		setWaitingState();
         	}
         }
@@ -501,16 +612,16 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	
 	private void setCornerSetState() {
 		m_state = AppState.CORNER_SET;
-		m_instruction_label.setText("<html>The corners of the board need to be located, click on the corners in clockwise order.</html>");
+		MainWindow.m_instruction_panel.m_instruction_label.setText("<html>The corners of the board need to be located, click on the corners in clockwise order.</html>");
 	}
 	
 	private void setWaitingState() {
 		m_state = AppState.WAITING;
-		m_instruction_label.setText("<html>Click anywhere to add a hold, or click on an existing hold to edit.</html>");
+		MainWindow.m_instruction_panel.m_instruction_label.setText("<html>Click anywhere to add a hold, or click on an existing hold to edit.</html>");
 	}
 	
 	private void setSavedText() {
-		m_instruction_label.setText("<html>Successfully saved board layout.</html>");
+		MainWindow.m_instruction_panel.m_instruction_label.setText("<html>Successfully saved board layout.</html>");
 	}
 	
 	private class CanvasMouseListener implements MouseListener, MouseMotionListener {
