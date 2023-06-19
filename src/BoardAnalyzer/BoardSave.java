@@ -9,6 +9,8 @@ import java.io.Serializable;
 
 import javax.imageio.ImageIO;
 
+import BoardAnalyzer.MathUtils.Vector2;
+
 public class BoardSave implements Serializable {
 	private static final long serialVersionUID = 2L;
 	public Board m_board;

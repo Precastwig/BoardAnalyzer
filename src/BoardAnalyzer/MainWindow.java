@@ -44,6 +44,10 @@ public class MainWindow {
             return null;
         }
     }
+    
+    public static void setInstructionText(String s) {
+    	MainWindow.m_instruction_panel.m_instruction_label.setText("<html>" + s + "</html>");
+    }
 
     public static void main(String[] args) {
     	try { 

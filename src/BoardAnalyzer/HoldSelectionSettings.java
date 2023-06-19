@@ -5,12 +5,14 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import BoardAnalyzer.Hold.Types;
+import BoardAnalyzer.MathUtils.Vector2;
 
 public class HoldSelectionSettings extends JPanel {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
@@ -47,6 +49,8 @@ public class HoldSelectionSettings extends JPanel {
 		
 		m_delete_hold_button = delete_hold_button;
 		add(m_delete_hold_button);
+		
+		add(Box.createVerticalGlue());
 		
 		m_suggest_type_button = suggest_type_button;
 		add(m_suggest_type_button);
