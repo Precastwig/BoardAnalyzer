@@ -275,7 +275,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 					m_board_save.m_board_dimensions,
 					m_board_save.m_hold_type_ratio, 
 					m_board_save.m_hold_direction_ratio);
-			Hold.Types new_type = a.suggestHoldTypes(m_selected_hold);
+			Hold.Type new_type = a.suggestHoldTypes(m_selected_hold);
 			m_hold_selection_settings.setToHoldType(new_type);
 		}
 	}
@@ -405,14 +405,14 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				m_board_save.m_hold_type_ratio, 
 				m_board_save.m_hold_direction_ratio);
 		File output_file = new File("heatmap.png");
-		HashSet<Hold.Types> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
+		HashSet<Hold.Type> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
 		if (holdtypes.isEmpty()) {
-			holdtypes.add(Hold.Types.CRIMP);
-			holdtypes.add(Hold.Types.FOOT);
-			holdtypes.add(Hold.Types.JUG);
-			holdtypes.add(Hold.Types.PINCH);
-			holdtypes.add(Hold.Types.POCKET);
-			holdtypes.add(Hold.Types.SLOPER);
+			holdtypes.add(Hold.Type.CRIMP);
+			holdtypes.add(Hold.Type.FOOT);
+			holdtypes.add(Hold.Type.JUG);
+			holdtypes.add(Hold.Type.PINCH);
+			holdtypes.add(Hold.Type.POCKET);
+			holdtypes.add(Hold.Type.SLOPER);
 		}
 		MainWindow.setInstructionText("Generating heatmap..");
 		BufferedImage image = a.getHeatmap(
@@ -544,22 +544,22 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	
 	private void saveSelectedHold() {
 		if (m_hold_selection_settings.isCrimp()) {
-			m_selected_hold.addType(Hold.Types.CRIMP);
+			m_selected_hold.addType(Hold.Type.CRIMP);
 		}
 		if (m_hold_selection_settings.isJug()) {
-			m_selected_hold.addType(Hold.Types.JUG);
+			m_selected_hold.addType(Hold.Type.JUG);
 		}
 		if (m_hold_selection_settings.isSloper()) {
-			m_selected_hold.addType(Hold.Types.SLOPER);
+			m_selected_hold.addType(Hold.Type.SLOPER);
 		}
 		if (m_hold_selection_settings.isPocket()) {
-			m_selected_hold.addType(Hold.Types.POCKET);
+			m_selected_hold.addType(Hold.Type.POCKET);
 		}
 		if (m_hold_selection_settings.isPinch()) {
-			m_selected_hold.addType(Hold.Types.PINCH);
+			m_selected_hold.addType(Hold.Type.PINCH);
 		}
 		if (m_hold_selection_settings.isFoot()) {
-			m_selected_hold.addType(Hold.Types.FOOT);
+			m_selected_hold.addType(Hold.Type.FOOT);
 		}
 		m_selected_hold.setDirection(m_hold_selection_settings.getDirection());
 		m_selected_hold.setSize(m_hold_selection_settings.getHoldSize());

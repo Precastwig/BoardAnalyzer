@@ -7,7 +7,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import boardanalyzer.Hold.Types;
+import boardanalyzer.Hold.Type;
 
 public class HeatmapSettings extends JPanel {
 	JSlider m_brightness_slider;
@@ -30,7 +30,7 @@ public class HeatmapSettings extends JPanel {
         add(m_brightness_slider);
         
         m_hold_type_selection = new ArrayList<JCheckBox>();
-		for (Hold.Types hold : Hold.Types.values()) {
+		for (Type hold : Type.values()) {
 			JCheckBox cb = new JCheckBox(hold.toString());
 			m_hold_type_selection.add(cb);
 			add(cb);
@@ -50,7 +50,7 @@ public class HeatmapSettings extends JPanel {
 	}
 	
 	public boolean atLeastOneHoldTypeSelected() {
-		for (Hold.Types hold : Hold.Types.values()) {
+		for (Type hold : Type.values()) {
 			if (m_hold_type_selection.get(hold.ordinal()).isSelected()) {
 				return true;
 			}
@@ -58,9 +58,9 @@ public class HeatmapSettings extends JPanel {
 		return false;
 	}
 	
-	public HashSet<Hold.Types> getSelectedHoldTypes() {
-		HashSet<Hold.Types> types = new HashSet<Hold.Types>();
-		for (Hold.Types hold : Hold.Types.values()) {
+	public HashSet<Type> getSelectedHoldTypes() {
+		HashSet<Type> types = new HashSet<Type>();
+		for (Type hold : Type.values()) {
 			if (m_hold_type_selection.get(hold.ordinal()).isSelected()) {
 				types.add(hold);
 			}
@@ -77,26 +77,26 @@ public class HeatmapSettings extends JPanel {
 	}
 	
 	public boolean isCrimpSelected() {
-		return m_hold_type_selection.get(Types.CRIMP.ordinal()).isSelected();
+		return m_hold_type_selection.get(Type.CRIMP.ordinal()).isSelected();
 	}
 	
 	public boolean isJugSelected() {
-		return m_hold_type_selection.get(Types.JUG.ordinal()).isSelected();
+		return m_hold_type_selection.get(Type.JUG.ordinal()).isSelected();
 	}
 	
 	public boolean isSloperSelected() {
-		return m_hold_type_selection.get(Types.SLOPER.ordinal()).isSelected();
+		return m_hold_type_selection.get(Type.SLOPER.ordinal()).isSelected();
 	}
 	
 	public boolean isPocketSelected() {
-		return m_hold_type_selection.get(Types.POCKET.ordinal()).isSelected();
+		return m_hold_type_selection.get(Type.POCKET.ordinal()).isSelected();
 	}
 	
 	public boolean isPinchSelected() {
-		return m_hold_type_selection.get(Types.PINCH.ordinal()).isSelected();
+		return m_hold_type_selection.get(Type.PINCH.ordinal()).isSelected();
 	}
 	
 	public boolean isFootSelected() {
-		return m_hold_type_selection.get(Types.FOOT.ordinal()).isSelected();
+		return m_hold_type_selection.get(Type.FOOT.ordinal()).isSelected();
 	}
 }

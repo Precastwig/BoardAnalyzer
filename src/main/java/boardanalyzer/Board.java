@@ -175,12 +175,12 @@ public class Board implements Serializable {
 		return Optional.of(new_hold);
 	}
 	
-	public int countType(Hold.Types t) {
+	public int countType(Hold.Type t) {
 		return countType(m_holds, t);
 	}
 	
-	static public int countType(ArrayList<Hold> holds, Hold.Types t) {
-		HashSet<Hold.Types> types = new HashSet<Hold.Types>();
+	static public int countType(ArrayList<Hold> holds, Hold.Type t) {
+		HashSet<Hold.Type> types = new HashSet<Hold.Type>();
 		types.add(t);
 		int count = 0;
 		for (Iterator<Hold> it = holds.iterator(); it.hasNext();) {
@@ -192,13 +192,13 @@ public class Board implements Serializable {
 		return count;
 	}
 	
-	public Hold.Types getLeastCommonType(HashSet<Hold.Types> ignored_types) throws InvalidAlgorithmParameterException {
+	public Hold.Type getLeastCommonType(HashSet<Hold.Type> ignored_types) throws InvalidAlgorithmParameterException {
 		int type_count = Integer.MAX_VALUE;
-		if (Hold.Types.values().length == ignored_types.size()) {
+		if (Hold.Type.values().length == ignored_types.size()) {
 			throw new InvalidAlgorithmParameterException("All types are ignored");
 		}
-		Hold.Types min_type = Hold.Types.CRIMP;
-		for (Hold.Types type : Hold.Types.values()) {
+		Hold.Type min_type = Hold.Type.CRIMP;
+		for (Hold.Type type : Hold.Type.values()) {
 			if (!ignored_types.contains(type)) {				
 				int new_count = countType(type);
 				if (new_count < type_count) {

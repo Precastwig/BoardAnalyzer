@@ -11,7 +11,7 @@ public class Hold implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	// Holds can be any combination of the below categories
-	public enum Types {
+	public enum Type {
 		JUG("Jug"),
 		CRIMP("Crimp"),
 		SLOPER("Sloper"),
@@ -19,12 +19,12 @@ public class Hold implements Serializable{
 		PINCH("Pinch"),
 		FOOT("Foot");
 		private String name;
-        private Types(String s) {
+        private Type(String s) {
             this.name = s;
         }
         
-        static public Types[] getHandTypes() {
-        	return new Types[] {
+        static public Type[] getHandTypes() {
+        	return new Type[] {
         		JUG,
         		CRIMP,
         		SLOPER,
@@ -38,25 +38,119 @@ public class Hold implements Serializable{
             return name;
         } 
 	}
+
+	public enum Direction {
+		UP("Up"),
+		RIGHT_SKEW("Slanted right"),
+		LEFT_SKEW("Slanted left"),
+		RIGHT_SIDEPULL("Right sidepull"),
+		LEFT_SIDEPULL("Left sidepull"),
+		UNDERCUT("Undercut");
+		private String name;
+		private Direction(String s) {
+			this.name = s;
+		}
+		private static double MARGIN = Math.PI / 32.0;
+		private static double UP_ANGLE = -Math.PI/2;
+		private static double LEFT_ANGLE = Math.PI;
+		private static double RIGHT_ANGLE = 0;
+		static public Direction classifyAngle(double angle) {
+			if (UP_ANGLE - MARGIN < angle && angle < UP_ANGLE + MARGIN) {
+				return Hold.Direction.UP;
+			} else if ((-LEFT_ANGLE < angle && angle < -LEFT_ANGLE + MARGIN) ||
+					(LEFT_ANGLE - MARGIN < angle && angle < LEFT_ANGLE)) {
+				return Hold.Direction.LEFT_SIDEPULL;
+			} else if (RIGHT_ANGLE - MARGIN < angle && angle < RIGHT_ANGLE + MARGIN) {
+				return Hold.Direction.RIGHT_SIDEPULL;
+			} else if (angle > 0) {
+				return Hold.Direction.UNDERCUT;
+			} else if (angle < -Math.PI/2) {
+				return Hold.Direction.LEFT_SKEW;
+			} else if (angle > -Math.PI/2) {
+				return Hold.Direction.RIGHT_SKEW;
+			}
+
+			// Default up
+			return Hold.Direction.UP;
+		}
+		static public double getAngle(Direction d) {
+			switch(d) {
+				case UP -> {
+					return UP_ANGLE;
+				}
+				case LEFT_SIDEPULL -> {
+					return LEFT_ANGLE;
+				}
+				case RIGHT_SIDEPULL -> {
+					return RIGHT_ANGLE;
+				}
+				case LEFT_SKEW -> {
+					return -(3 * Math.PI) / 4;
+				}
+				case RIGHT_SKEW -> {
+					return -Math.PI / 4;
+				}
+				case UNDERCUT -> {
+					return Math.PI / 2;
+				}
+			}
+			return 0.0;
+		}
+		static public double getRandomAngle(Direction d) {
+			double random_amount = Math.random();
+			switch (d) {
+				case UP -> {
+					return (UP_ANGLE - MARGIN) + (random_amount * 2 * MARGIN);
+				}
+				case LEFT_SIDEPULL -> {
+					if (random_amount < 0.5) {
+						return (-LEFT_ANGLE) + (random_amount * MARGIN);
+					} else {
+						random_amount = 1 - random_amount;
+						return (LEFT_ANGLE) - (random_amount * MARGIN);
+					}
+				}
+				case RIGHT_SIDEPULL -> {
+					return (RIGHT_ANGLE - MARGIN) + (random_amount * 2 * MARGIN);
+				}
+				case UNDERCUT -> {
+					return (RIGHT_ANGLE + MARGIN) + (random_amount * (LEFT_ANGLE - (2 * MARGIN)));
+				}
+				case LEFT_SKEW -> {
+					return (-LEFT_ANGLE + MARGIN) + (random_amount * ((Math.PI / 2) - (2 * MARGIN)));
+				}
+				case RIGHT_SKEW -> {
+					return (UP_ANGLE + MARGIN) + (random_amount * ((Math.PI / 2) - (2 * MARGIN)));
+				}
+			}
+			System.out.println("Error!");
+			// Default up
+			return 0.0;
+		}
+		@Override
+		public String toString() {
+			return name;
+		}
+	}
 	
 	private Vector2 m_pos;
 	private Vector2 m_size;
 	private double m_direction_rad;
 	
-	private HashSet<Types> m_types; 
+	private HashSet<Type> m_types;
 	
 	public Hold() {
 		m_pos = new Vector2(0,0);
 		m_size = new Vector2(0,0);
 		m_direction_rad = 0;
-		m_types = new HashSet<Types>();
+		m_types = new HashSet<Type>();
 	}
 	
 	public Hold(Vector2 pos, Vector2 size, double direction_rad) {
 		m_pos = new Vector2(pos);
 		m_size = new Vector2(size);
 		m_direction_rad = direction_rad;
-		m_types = new HashSet<Types>();
+		m_types = new HashSet<Type>();
 	}
 	
 	public Vector2 position() {
@@ -83,29 +177,29 @@ public class Hold implements Serializable{
 		m_direction_rad = dir;
 	}
 	
-	public boolean isOneOf(HashSet<Hold.Types> hold_types) {
-		Set<Types> intersection = new HashSet<Types>(hold_types);
+	public boolean isOneOf(HashSet<Type> hold_types) {
+		Set<Type> intersection = new HashSet<Type>(hold_types);
 		intersection.retainAll(m_types);
 		return !intersection.isEmpty();
 	}
 	
-	public boolean isTypes(HashSet<Hold.Types> hold_types) {
+	public boolean isTypes(HashSet<Type> hold_types) {
 		return m_types.equals(hold_types);
 	}
 	
-	public boolean typesContain(Hold.Types t) {
+	public boolean typesContain(Type t) {
 		return m_types.contains(t);
 	}
 	
-	public HashSet<Hold.Types> getTypes() {
+	public HashSet<Type> getTypes() {
 		return m_types;
 	}
 	
-	public void addTypes(HashSet<Hold.Types> hold_types) {
+	public void addTypes(HashSet<Type> hold_types) {
 		m_types.addAll(hold_types);
 	}
 	
-	public void addType(Types t) {
+	public void addType(Type t) {
 		m_types.add(t);
 	}
 	
@@ -132,26 +226,26 @@ public class Hold implements Serializable{
 	}
 	
 	public boolean isJug() {
-		return m_types.contains(Types.JUG);
+		return m_types.contains(Type.JUG);
 	}
 	
 	public boolean isCrimp() {
-		return m_types.contains(Types.CRIMP);
+		return m_types.contains(Type.CRIMP);
 	}
 	
 	public boolean isSloper() {
-		return m_types.contains(Types.SLOPER);
+		return m_types.contains(Type.SLOPER);
 	}
 	
 	public boolean isPocket() {
-		return m_types.contains(Types.POCKET);
+		return m_types.contains(Type.POCKET);
 	}
 	
 	public boolean isPinch() {
-		return m_types.contains(Types.PINCH);
+		return m_types.contains(Type.PINCH);
 	}
 	
 	public boolean isFoot() {
-		return m_types.contains(Types.FOOT);
+		return m_types.contains(Type.FOOT);
 	}
 }

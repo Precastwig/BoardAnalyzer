@@ -12,7 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
-import boardanalyzer.Hold.Types;
+import boardanalyzer.Hold.Type;
 
 public class BoardStatistics extends JPanel {
 	
@@ -31,7 +31,7 @@ public class BoardStatistics extends JPanel {
 		m_num_holds_types = new ArrayList<JLabel>(); 
 		m_num_holds_types_pbs = new ArrayList<JProgressBar>();
 		inner_layout.add(m_num_holds);
-		for (Hold.Types hold : Hold.Types.values()) {
+		for (Type hold : Type.values()) {
 			JLabel l = new JLabel(hold.toString() + "'s : ");
 			JProgressBar pb = new JProgressBar(0, 100);
 			pb.setStringPainted(true);
@@ -52,12 +52,12 @@ public class BoardStatistics extends JPanel {
 		m_num_holds.setText("Number of holds: " + b.getHolds().size());
 		int num_holds_count[] = {0,0,0,0,0,0};
 		for (Hold h : b.getHolds()) {
-			HashSet<Types> types = h.getTypes();
-			for (Types t : types) {
+			HashSet<Type> types = h.getTypes();
+			for (Type t : types) {
 				num_holds_count[t.ordinal()] += 1;
 			}
 		}
-		for (Hold.Types hold : Hold.Types.values()) {
+		for (Type hold : Type.values()) {
 			//System.out.println(num_holds_count[hold.ordinal()]);
 			double percentage = (((double)num_holds_count[hold.ordinal()]) / (double)b.getHolds().size()) * 100.0;
 			//System.out.println(percentage);

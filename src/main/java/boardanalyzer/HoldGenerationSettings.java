@@ -22,7 +22,7 @@ public class HoldGenerationSettings extends JPanel implements ItemListener {
 		m_least_common_hold_checkbox = new JCheckBox("Least Common Hold Type");
 		add(m_least_common_hold_checkbox);
 		m_hold_type_checkboxes = new ArrayList<JCheckBox>();
-		for (Hold.Types hold : Hold.Types.values()) {
+		for (Hold.Type hold : Hold.Type.values()) {
 			JCheckBox cb = new JCheckBox(hold.toString());
 			m_hold_type_checkboxes.add(cb);
 			add(cb);
@@ -34,9 +34,9 @@ public class HoldGenerationSettings extends JPanel implements ItemListener {
 		return m_least_common_hold_checkbox.isEnabled();
 	}
 	
-	public HashSet<Hold.Types> getHoldTypeToGenerate() {
-		HashSet<Hold.Types> returnTypes = new HashSet<Hold.Types>();
-		for (Hold.Types hold : Hold.Types.values()) {
+	public HashSet<Hold.Type> getHoldTypeToGenerate() {
+		HashSet<Hold.Type> returnTypes = new HashSet<Hold.Type>();
+		for (Hold.Type hold : Hold.Type.values()) {
 			if (m_hold_type_checkboxes.get(hold.ordinal()).isEnabled()) {
 				returnTypes.add(hold);
 			}

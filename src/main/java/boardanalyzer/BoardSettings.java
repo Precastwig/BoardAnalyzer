@@ -16,11 +16,11 @@ public class BoardSettings extends JPanel {
 		
 	private TextField m_width_textfield;
 	private TextField m_height_textfield;
-	private PercentageChooser<Hold.Types> m_hold_type_bars;
-	private PercentageChooser<Analyzer.AngleProportions.BucketLabel> m_hold_direction_bars;
+	private PercentageChooser<Hold.Type> m_hold_type_bars;
+	private PercentageChooser<Hold.Direction> m_hold_direction_bars;
 	private MinMaxSizePanel m_hold_size;
 	
-	class MinMaxSizePanel extends JPanel {
+	static class MinMaxSizePanel extends JPanel {
 		private TextField m_min_textfield;
 		private TextField m_max_textfield;
 		public MinMaxSizePanel() {
@@ -85,8 +85,8 @@ public class BoardSettings extends JPanel {
         height_input.add(m_height_textfield);
         height_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
         height_input.setAlignmentX(0.5f);
-        m_hold_type_bars = new PercentageChooser<Hold.Types>(Hold.Types.getHandTypes());
-        m_hold_direction_bars = new PercentageChooser<Analyzer.AngleProportions.BucketLabel>(Analyzer.AngleProportions.BucketLabel.values());
+        m_hold_type_bars = new PercentageChooser<Hold.Type>(Hold.Type.getHandTypes());
+        m_hold_direction_bars = new PercentageChooser<Hold.Direction>(Hold.Direction.values());
         m_hold_size = new MinMaxSizePanel();
         
         JTabbedPane tabbed_panel = new JTabbedPane();
