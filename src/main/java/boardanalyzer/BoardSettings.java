@@ -12,25 +12,41 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+import BoardAnalyzer.Analysis.Analyzer;
+import BoardAnalyzer.MathUtils.Vector2;
+
 public class BoardSettings extends JPanel {
-//	class HoldTypePreferenceSelectors extends JPanel {
-//		private ArrayList<BarWithButtons> m_bars;
-//		
-//		public HoldTypePreferenceSelectors() {
-//			m_bars = new ArrayList<BarWithButtons>();
-//			for (Hold.Types type : Hold.Types.values()) {
-//				BarWithButtons bwb = new BarWithButtons(type.toString());
-//				m_bars.add(bwb);
-//				add(bwb);
-//			}
-//		}
-//	}
-	
-	
+		
 	private TextField m_width_textfield;
 	private TextField m_height_textfield;
 	private PercentageChooser<Hold.Types> m_hold_type_bars;
 	private PercentageChooser<Analyzer.AngleProportions.BucketLabel> m_hold_direction_bars;
+	private MinMaxSizePanel m_hold_size;
+	
+	class MinMaxSizePanel extends JPanel {
+		private TextField m_min_textfield;
+		private TextField m_max_textfield;
+		public MinMaxSizePanel() {
+			setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+			JPanel min_input = new JPanel();
+			min_input.add(new JLabel("Min"));
+			m_min_textfield = new TextField();
+			m_min_textfield.setText("0");
+			min_input.add(m_min_textfield);
+			add(min_input);
+			
+			JPanel max_input = new JPanel();
+			max_input.add(new JLabel("Max"));
+			m_max_textfield = new TextField();
+			m_max_textfield.setText("0");
+			max_input.add(m_max_textfield);
+			add(max_input);
+		}
+		
+		public int getHoldSizePreference() throws NumberFormatException {
+			return Integer.parseInt(m_min_textfield.getText());
+		}
+	}
 	
 	public BoardSettings(
 			JButton new_board_button, 
@@ -74,9 +90,12 @@ public class BoardSettings extends JPanel {
         height_input.setAlignmentX(0.5f);
         m_hold_type_bars = new PercentageChooser<Hold.Types>(Hold.Types.getHandTypes());
         m_hold_direction_bars = new PercentageChooser<Analyzer.AngleProportions.BucketLabel>(Analyzer.AngleProportions.BucketLabel.values());
+        m_hold_size = new MinMaxSizePanel();
+        
         JTabbedPane tabbed_panel = new JTabbedPane();
         tabbed_panel.add("Type", m_hold_type_bars);
         tabbed_panel.add("Direction", m_hold_direction_bars);
+        tabbed_panel.add("Size", m_hold_size);
         
         JLabel hold_pref_label = new JLabel("Hold preferences");
         hold_pref_label.setAlignmentX(0.5f);
@@ -105,9 +124,7 @@ public class BoardSettings extends JPanel {
 	}
 	
 	public int[] getHoldDirectionRatio() {
-		return new int[] {
-			1,1,1,1,1,1
-		};
+		return m_hold_direction_bars.getRatio();
 	}
 	
 	public Vector2 getBoardDimensions() throws NumberFormatException {

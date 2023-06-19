@@ -6,6 +6,10 @@ import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
+
+import BoardAnalyzer.MathUtils.PerspectiveTransform;
+import BoardAnalyzer.MathUtils.Vector2;
 
 public class Board implements Serializable {
 	/**
@@ -140,13 +144,38 @@ public class Board implements Serializable {
 		return ret_h;
 	}
 	
-	public Hold createHold(int x, int y) {
+	public boolean isInsideBorders(Vector2 p) {
+		if (!areAllCornersSet()) {
+			return false;
+		}
+		
+		int some_big_number = 1000000;
+        Vector2 extreme = new Vector2(some_big_number, p.y);
+
+        int count = 0, i = 0;
+        do {
+            int next = (i + 1) % 4;
+            if (Vector2.intersectFiniteLines(m_board_corners.get(i), m_board_corners.get(next), p, extreme)) {
+                if (Vector2.orientation(m_board_corners.get(i), p, m_board_corners.get(next)) == 0)
+                    return Vector2.onSegment(m_board_corners.get(i), p, m_board_corners.get(next));
+                count++;
+            }
+            i = next;
+        } while (i != 0);
+
+        return (count & 1) == 1 ? true : false;
+	}
+	
+	public Optional<Hold> createHold(Vector2 pos) {
+		if (!isInsideBorders(pos)) {
+			return Optional.empty();
+		}
 		Hold new_hold = new Hold();
 		new_hold.setSize(new Vector2(50, 50));
-		new_hold.setPosition(new Vector2(x - 25, y - 25));
+		new_hold.setPosition(new Vector2(pos.x - 25, pos.y - 25));
 //		System.out.println(x + "   " + y);
 		m_holds.add(new_hold);
-		return new_hold;
+		return Optional.of(new_hold);
 	}
 	
 	public int countType(Hold.Types t) {

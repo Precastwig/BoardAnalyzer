@@ -365,6 +365,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void generateHold() {
+		if (m_selected_hold != null) {
+			saveSelectedHold();
+		}
 		Analyzer a = new Analyzer(m_board_save.m_board, 
 				m_board_save.m_board_dimensions,
 				m_board_save.m_hold_type_ratio, 
@@ -389,7 +392,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			o.writeObject(m_board_save);
 			o.flush();
 			o.close();
-			setSavedText();
+			MainWindow.setInstructionText("Board saved to file " + file.getAbsolutePath());
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -414,7 +417,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			holdtypes.add(Types.POCKET);
 			holdtypes.add(Types.SLOPER);
 		}
-		
+		MainWindow.setInstructionText("Generating heatmap..");
 		BufferedImage image = a.getHeatmap(
 				m_heatmap_settings.getBrightness(),
 				holdtypes, 
@@ -433,7 +436,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		try {
 			m_board_save.m_board_dimensions = m_board_settings.getBoardDimensions();
 		} catch (java.lang.NumberFormatException e) {
-			System.out.println("Board settings not saved, error in width or height");
+			System.out.println("Board not saved, error in width or height");
 		}
 		m_board_save.m_hold_type_ratio = m_board_settings.getHoldTypeRatio();
 		m_board_save.m_hold_direction_ratio = m_board_settings.getHoldDirectionRatio();
@@ -597,7 +600,12 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				}
         	} else {        			
 	        	// No hold where we clicked
-        		selectHold(m_board_save.m_board.createHold(x, y));
+        		Optional<Hold> hold_maybe = m_board_save.m_board.createHold(new Vector2(x, y));
+        		if (hold_maybe.isPresent()) {
+        			selectHold(hold_maybe.get());
+        		} else {
+        			MainWindow.setInstructionText("Selection is outside of board limits");
+        		}
         	}
         } else if (m_state == AppState.CORNER_SET) {
         	m_board_save.m_board.addCorner(new Vector2(x, y));
@@ -611,16 +619,12 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	
 	private void setCornerSetState() {
 		m_state = AppState.CORNER_SET;
-		MainWindow.m_instruction_panel.m_instruction_label.setText("<html>The corners of the board need to be located, click on the corners in clockwise order.</html>");
+		MainWindow.setInstructionText("The corners of the board need to be located, click on the corners in clockwise order.");
 	}
 	
 	private void setWaitingState() {
 		m_state = AppState.WAITING;
-		MainWindow.m_instruction_panel.m_instruction_label.setText("<html>Click anywhere to add a hold, or click on an existing hold to edit.</html>");
-	}
-	
-	private void setSavedText() {
-		MainWindow.m_instruction_panel.m_instruction_label.setText("<html>Successfully saved board layout.</html>");
+		MainWindow.setInstructionText("Click anywhere to add a hold, or click on an existing hold to edit.");
 	}
 	
 	private class CanvasMouseListener implements MouseListener, MouseMotionListener {
@@ -715,13 +719,20 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
 		if (m_state == AppState.HOLD_SELECTED) {			
 			if (e.getKeyCode() == KeyEvent.VK_DELETE &&  e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
 				deleteSelectedHold();
 				repaint();
 			}
 		}
-		
+		/// Ctrl + S
+		if (e.getKeyCode() == KeyEvent.VK_S && (e.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
+			if (m_state == AppState.HOLD_SELECTED) {
+				saveSelectedHold();
+				repaint();
+			} else {
+				saveBoard(m_current_loaded_board_file);
+			}
+		}
 	}
 }
