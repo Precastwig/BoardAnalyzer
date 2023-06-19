@@ -11,3 +11,5 @@ heatmap.png
 
 # Ignore Gradle build output directory
 build
+
+images/*

@@ -8,9 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 
-import BoardAnalyzer.MathUtils.PerspectiveTransform;
-import BoardAnalyzer.MathUtils.Vector2;
-
 public class Board implements Serializable {
 	/**
 	 * 

@@ -109,7 +109,9 @@ public class Vector2 implements Serializable {
     	return new Vector2(-v.y, v.x);
     }
     
-    static public Vector2 intersect(Vector2 p1, Vector2 v1, Vector2 p2, Vector2 v2) {
+    /// Where p1 is a point and v1 is it's directional vector
+    /// and p2 is a point and v2 is it's directional vector
+    static public Vector2 intersectInfiniteLines(Vector2 p1, Vector2 v1, Vector2 p2, Vector2 v2) {
     	double c1 = p1.y - (v1.gradient() * p1.x); // c = y - mx
     	double c2 = p2.y - (v2.gradient() * p2.x);
     	
@@ -135,8 +137,51 @@ public class Vector2 implements Serializable {
         return new Vector2(x, y);
     }
     
+    // Where p1 -> q1 makes up a line
+    // and p2 -> q2 makes up a line
+    static public boolean intersectFiniteLines(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2) {
+        int o1 = orientation(p1, q1, p2);
+        int o2 = orientation(p1, q1, q2);
+        int o3 = orientation(p2, q2, p1);
+        int o4 = orientation(p2, q2, q1);
+
+        if (o1 != o2 && o3 != o4)
+            return true;
+
+        if (o1 == 0 && onSegment(p1, p2, q1))
+            return true;
+
+        if (o2 == 0 && onSegment(p1, q2, q1))
+            return true;
+
+        if (o3 == 0 && onSegment(p2, p1, q2))
+            return true;
+
+        if (o4 == 0 && onSegment(p2, q1, q2))
+            return true;
+
+        return false;
+    }
+    
+    public static boolean onSegment(Vector2 p, Vector2 q, Vector2 r)
+    {
+        if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x)
+                && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
+            return true;
+        return false;
+    }
+    
+    public static int orientation(Vector2 p, Vector2 q, Vector2 r)
+    {
+        double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+        if (val == 0)
+            return 0;
+        
+        return (val > 0) ? 1 : 2;
+    }
+    
     public static void main(String[] args) {
-    	Vector2 res = Vector2.intersect(
+    	Vector2 res = Vector2.intersectInfiniteLines(
     			new Vector2(0,0), 
     			new Vector2(5,2), 
     			new Vector2(10,0), 

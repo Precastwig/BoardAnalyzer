@@ -7,9 +7,13 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.Random;
+
+import javax.swing.JProgressBar;
 
 import org.kynosarges.tektosyne.geometry.PointD;
 import org.kynosarges.tektosyne.geometry.RectD;
@@ -18,7 +22,7 @@ import org.kynosarges.tektosyne.geometry.VoronoiEdge;
 import org.kynosarges.tektosyne.geometry.VoronoiResults;
 
 public class Analyzer {
-	class AngleProportions {
+	public class AngleProportions {
 		public enum BucketLabel {
 			UP("Up"),
 			RIGHT_SKEW("Slanted right"),
@@ -159,28 +163,59 @@ public class Analyzer {
 		return al.toArray(new PointD[al.size()]);
 	}
 	
-	// Return the location in the same space as b
-	private Vector2 getNewHoldLocation(Board b) {
-		double MARGIN = 0.001;
+	private boolean checkLocationValid(
+			Vector2 loc,
+			double min_distance,
+			double max_distance,
+			Board b) {
+		if (!b.isInsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y)) {
+			return false;
+		}
+		Hold nearest_hold = b.getNearestHold(loc);
+		double dist = nearest_hold.getCentrePoint().distanceTo(loc);
+		if (min_distance < dist && dist < max_distance) {
+			return true;
+		}
+		return false;
+	}
+	
+	private ArrayList<Vector2> getAllPotentialNewHoldLocations(
+			Board b,
+			double min_distance,
+			double max_distance,
+			Optional<Hold.Types> hold_type
+			) {
+		ArrayList<Vector2> return_list = new ArrayList<Vector2>();
 		ArrayList<Hold> holds = b.getHolds();
+		
+		if (holds.size() < 3) {
+			// Pick randomly
+			int ran_x;
+			int ran_y;
+			do {
+				int EDGE_DISTANCE = (int) (Math.min(b.getBoardWidth(), b.getBoardHeight())*0.05);
+				Random r = new Random();
+				ran_x = r.nextInt((int) b.getBoardWidth() - 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
+				ran_y = r.nextInt((int) b.getBoardHeight()- 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
+			} while (b.existsHold(ran_x, ran_y));
+			return_list.add(new Vector2(ran_x, ran_y));
+			return return_list;
+		}
+		
+		// Use Voronoi to generate potential positions
 		PointD[] hold_positions = getPointArrayFromHolds(holds);
 		RectD clipping_rect = new RectD(0.0, 0.0, b.getBoardWidth(), b.getBoardHeight());
 		VoronoiResults v = Voronoi.findAll(hold_positions, clipping_rect);
 		PointD[] points = v.voronoiVertices;
-		Vector2 furthest_point = new Vector2(holds.get(0).getCentrePoint());
-		double furthest_distance = 0.0;
+		
+		// Trim this set of points using distances
 		for (int i = 0; i < points.length; i++) {
-			if (0.0 + MARGIN < points[i].x && points[i].x < b.getBoardWidth() - MARGIN &&
-				0.0 + MARGIN < points[i].y && points[i].y < b.getBoardHeight() - MARGIN) {
-				Vector2 p = new Vector2(points[i]);
-				double dist = b.getNearestHold(p).getCentrePoint().distanceTo(p);
-				if (dist > furthest_distance) {
-					furthest_distance = dist;
-					furthest_point = p;
-				}
+			Vector2 p = new Vector2(points[i]);
+			if (checkLocationValid(p, min_distance, max_distance, b)) {
+				return_list.add(p);
 			}
 		}
-		// No valid points
+
 		VoronoiEdge[] edges = v.voronoiEdges;
 		// Find the longest edge
 
@@ -189,11 +224,29 @@ public class Analyzer {
 			Vector2 p2 = new Vector2(points[edges[i].vertex2]);
 			
 			Vector2 line = new Vector2(p1.x - p2.x, p1.y - p2.y);
-			
+			Vector2 p = new Vector2(p2.x + 0.5 * line.x, p2.y + 0.5 * line.y);
+			if (checkLocationValid(p, min_distance, max_distance, b)) {
+				return_list.add(p);
+			}
 		}
-		return furthest_point;
+		
+		return return_list;
 	}
 	
+	// Return the location in the same space as b
+	private Vector2 getNewHoldLocation(Board b) {
+		ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b, 10, Double.POSITIVE_INFINITY, Optional.empty());
+		if (new_locs.size() < 1) {
+			System.out.println("getAllPotentialNewHoldLocations has not generated any locations!");
+		}
+		Random r = new Random();
+		int index = r.nextInt(new_locs.size());
+		return new_locs.get(index);
+	}
+	
+//// I normally hate pushing commented out code, 
+//// but the analysis done here is solid and I probably want it for something...
+//// (also no one can stop me, mwah hah hah hah)
 //	private AngleStats getAngleStats(ArrayList<Hold> holds) {
 //		// https://www.ncss.com/wp-content/themes/ncss/pdf/Procedures/NCSS/Circular_Data_Analysis.pdf
 //		double c = 0.0;
@@ -236,14 +289,14 @@ public class Analyzer {
 	}
 	
 	public Hold.Types suggestHoldTypes(Hold h) {
-//		Board flat_board = flattenBoard();
-//		flat_board.removeHoldAt(h.position());
+		Board flat_board = flattenBoard();
+		flat_board.removeHoldAt(h.position());
 		return getLeastFilledHoldType(m_board, h.getCentrePoint(), Hold.Types.getHandTypes());
 	}
 	
 	public double suggestHoldDirection(Hold h) {
-//		Board flat_board = flattenBoard();
-//		flat_board.removeHoldAt(h.position());
+		Board flat_board = flattenBoard();
+		flat_board.removeHoldAt(h.position());
 		return getNewHoldDirection(m_board, h.getCentrePoint(), h.size());
 	}
 	
@@ -269,7 +322,7 @@ public class Analyzer {
 		Hold nearest_hold = b.getNearestHold(position);
 		double MAX_HOLD_SIZE = 100;
 		// TODO This does not account for ellipses!
-		double min_size = 10;
+		double min_size = 30;
 		for (Iterator<Hold> it = b.getHolds().iterator(); it.hasNext();) {
 			Hold h = it.next();
 			Vector2 hsize = h.size();
@@ -380,7 +433,6 @@ public class Analyzer {
 			if (
 				(!hold_types_exact_match && h.isOneOf(hold_types_to_show))
 			||  (hold_types_exact_match && h.isTypes(hold_types_to_show))) {
-				//System.out.println(hold_types_to_show);
 				// Pixel to hold vector
 				Vector2 hold_centre = h.getCentrePoint();
 				Vector2 pixel_to_hold_centre_v = new Vector2(i - hold_centre.x, j - hold_centre.y);
@@ -392,10 +444,8 @@ public class Analyzer {
 //				double hold_circ_x = ;
 				/////// TODO This is very simplistic, 
 				// ideally we should account for the elliptical nature of the hold
-				// The above comments are a start... The rest is in the yellow notebook (FELIX)
+				// The above comments are a start... The rest is in the yellow notebook (FELIX...)
 				double pixel_to_hold = pixel_to_hold_centre_v.length() - h.size().y;
-//			System.out.println(ph.length());
-//			System.out.println(h.m_size);
 				if (pixel_to_hold < 0.0) {
 					return new Color(
 							redness + red_increase_amount, 
@@ -406,10 +456,7 @@ public class Analyzer {
 					smallest_proximity = pixel_to_hold;
 				}
 				
-			}
-			
-			//System.out.println("Should be reddish");
-			
+			}			
 		}
 		double relative_brightness = heatmapFunction(smallest_proximity, brightness_factor);
 		return new Color(
@@ -423,18 +470,17 @@ public class Analyzer {
 			HashSet<Hold.Types> hold_types_to_show, 
 			boolean hold_types_exact_match,
 			boolean hold_direction_matters) {
-		MainWindow.m_instruction_panel.m_instruction_label.setText("Generating heatmap..");
-		MainWindow.m_instruction_panel.showProgressBar();
+		//MainWindow.m_instruction_panel.showProgressBar();
 		Board flat_board = flattenBoard();
 		Vector2 image_size = flat_board.getBoardSize();
-		MainWindow.m_instruction_panel.updateProgressBarRange(0, (int)image_size.x);
+		//MainWindow.m_instruction_panel.updateProgressBarRange(0, (int)image_size.x);
 		BufferedImage image = new BufferedImage(
 				(int)image_size.x, 
 				(int)image_size.y, 
 				BufferedImage.TYPE_INT_RGB
 			);
 		for (int i = 0; i < image_size.x; i++) {
-			MainWindow.m_instruction_panel.updateProgressBar(i);;
+			//MainWindow.m_instruction_panel.updateProgressBar(i);;
 			for (int j = 0; j < image_size.y; j++) {
 				// Calculate pixel
 				Color c = getPixelProximityColour(
@@ -446,7 +492,7 @@ public class Analyzer {
 				image.setRGB(i, j, c.getRGB());
 			}
 		}
-		MainWindow.m_instruction_panel.hideProgressBar();
+		//MainWindow.m_instruction_panel.hideProgressBar();
 		return image;
 	}
 	
@@ -536,7 +582,8 @@ public class Analyzer {
 			flat_hold.addTypes(h.getTypes());
 			flat_board.addHold(flat_hold);
 		}
-		
+		System.out.println("Regular board size: " + m_board.getBoardWidth() + ", " + m_board.getBoardHeight());
+		System.out.println("Flat board size: " + flat_board.getBoardWidth() + ", " + flat_board.getBoardHeight());
 		return flat_board;
 	}
 }

@@ -12,9 +12,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import BoardAnalyzer.Analysis.Analyzer;
-import BoardAnalyzer.MathUtils.Vector2;
-
 public class BoardSettings extends JPanel {
 		
 	private TextField m_width_textfield;

@@ -14,9 +14,6 @@ import java.util.Optional;
 
 import javax.swing.event.*;
 
-import boardanalyzer.Hold.Types;
-
-
 public class BoardFrame extends JPanel implements ActionListener, ChangeListener, KeyListener {
 	private enum AppState {
 		LOAD_IMAGE,
@@ -410,12 +407,12 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		File output_file = new File("heatmap.png");
 		HashSet<Hold.Types> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
 		if (holdtypes.isEmpty()) {
-			holdtypes.add(Types.CRIMP);
-			holdtypes.add(Types.FOOT);
-			holdtypes.add(Types.JUG);
-			holdtypes.add(Types.PINCH);
-			holdtypes.add(Types.POCKET);
-			holdtypes.add(Types.SLOPER);
+			holdtypes.add(Hold.Types.CRIMP);
+			holdtypes.add(Hold.Types.FOOT);
+			holdtypes.add(Hold.Types.JUG);
+			holdtypes.add(Hold.Types.PINCH);
+			holdtypes.add(Hold.Types.POCKET);
+			holdtypes.add(Hold.Types.SLOPER);
 		}
 		MainWindow.setInstructionText("Generating heatmap..");
 		BufferedImage image = a.getHeatmap(
@@ -547,22 +544,22 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	
 	private void saveSelectedHold() {
 		if (m_hold_selection_settings.isCrimp()) {
-			m_selected_hold.addType(Types.CRIMP);
+			m_selected_hold.addType(Hold.Types.CRIMP);
 		}
 		if (m_hold_selection_settings.isJug()) {
-			m_selected_hold.addType(Types.JUG);
+			m_selected_hold.addType(Hold.Types.JUG);
 		}
 		if (m_hold_selection_settings.isSloper()) {
-			m_selected_hold.addType(Types.SLOPER);
+			m_selected_hold.addType(Hold.Types.SLOPER);
 		}
 		if (m_hold_selection_settings.isPocket()) {
-			m_selected_hold.addType(Types.POCKET);
+			m_selected_hold.addType(Hold.Types.POCKET);
 		}
 		if (m_hold_selection_settings.isPinch()) {
-			m_selected_hold.addType(Types.PINCH);
+			m_selected_hold.addType(Hold.Types.PINCH);
 		}
 		if (m_hold_selection_settings.isFoot()) {
-			m_selected_hold.addType(Types.FOOT);
+			m_selected_hold.addType(Hold.Types.FOOT);
 		}
 		m_selected_hold.setDirection(m_hold_selection_settings.getDirection());
 		m_selected_hold.setSize(m_hold_selection_settings.getHoldSize());
