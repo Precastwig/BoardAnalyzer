@@ -1,4 +1,4 @@
-# (climbing) board analyzer
+# (climbing) Board analyzer
 
 In the climbing world, it's common to create one's own climbing wall, often people try to fill the areas of the board with various hold types and directions. One problem is that humans are stupid, and we struggle to effectively fill the board.
 
@@ -11,7 +11,11 @@ Java is one of the easiest languages with the best inherent GUI design, so java 
 
 ### To do
 - Fix board flattening algorithm. It currenly does some odd things
-- Heatmap settings, based upon something etc
-- Produce Hold suggestions (and eventually based upon board preferences)
-- Display hold suggestions on the main window! (hard? Got to undo the flattening algorithm, might be fine)
+- Force every hold to have a type
+- Make selected hold more obvious
+- Fix colours for different hold types?
+- Make it so you cannot create a hold outside of the wall border
+- Change hold direction/type suggestions based upon location (less sidepulls near the edge, only feet at the bottom)
+- Show progress bar during long generations/Put them on a seperate thread
+- Refactor the Analyzer class (it's a mess)
 - Auto hold discovery (grumble?)
