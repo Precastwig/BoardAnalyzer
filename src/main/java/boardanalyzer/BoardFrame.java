@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.Optional;
 
 import javax.swing.event.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class BoardFrame extends JPanel implements ActionListener, ChangeListener, KeyListener {
 	private enum AppState {
@@ -307,7 +308,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				return;
 			}
 		}
-		m_file_chooser.setFileFilter(new BoardFileFilter());
+		m_file_chooser.setFileFilter(new FileNameExtensionFilter("Board saves", BoardFrame.BOARD_EXTENSION));
 		int returnVal = m_file_chooser.showDialog(this, "Open Board Save");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File chosen_file = m_file_chooser.getSelectedFile();
@@ -440,7 +441,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void openFileOpenerDialogAndOpenFile() {
-		m_file_chooser.setFileFilter(new ImageFileFilter());
+		m_file_chooser.setFileFilter(new FileNameExtensionFilter("JPG and PNG images", "jpeg", "jpg", "png"));
 		int returnVal = m_file_chooser.showDialog(this, "Open Image");
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
