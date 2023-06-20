@@ -1,5 +1,8 @@
 package boardanalyzer;
 
+import boardanalyzer.utils.PerspectiveTransform;
+import boardanalyzer.utils.Vector2;
+
 import java.awt.geom.Point2D;
 import java.io.Serializable;
 import java.security.InvalidAlgorithmParameterException;

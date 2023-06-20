@@ -17,7 +17,6 @@ public class HeatmapSettings extends JPanel {
 	
 	public HeatmapSettings() {
 		JLabel explanationLabel = new JLabel("<html>This will create a heatmap from the various settings below, if no hold types are selected, all will be used.</html>");
-		explanationLabel.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 100));
 		add(explanationLabel);
 		
 		m_brightness_slider = new JSlider(JSlider.HORIZONTAL, 10, 200, 100);
@@ -41,8 +40,6 @@ public class HeatmapSettings extends JPanel {
 		
 		m_hold_direction_checkbox = new JCheckBox("Hold direction matters");
 		add(m_hold_direction_checkbox);
-		
-		setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 600));
 	}
 	
 	public int getBrightness() {

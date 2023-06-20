@@ -1,5 +1,8 @@
 package boardanalyzer;
 
+import boardanalyzer.ui.basic_elements.PercentageChooser;
+import boardanalyzer.utils.Vector2;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextField;
@@ -54,7 +57,7 @@ public class BoardSettings extends JPanel {
 		setLayout(new BorderLayout());
 		JPanel inner_panel = new JPanel();
 		inner_panel.setLayout(new BoxLayout(inner_panel, BoxLayout.PAGE_AXIS));
-		inner_panel.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 1200));
+//		inner_panel.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 1200));
         
 //        open_button.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
 //        open_button.setMinimumSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
@@ -71,19 +74,19 @@ public class BoardSettings extends JPanel {
 		JPanel width_input = new JPanel();
         JLabel width_label = new JLabel("Width");
         m_width_textfield.setText("0");
-        m_width_textfield.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
+//        m_width_textfield.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
         width_input.add(width_label);
         width_input.add(m_width_textfield);
-        width_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
+//        width_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
         width_input.setAlignmentX(0.5f);
         
         JPanel height_input = new JPanel();
         JLabel height_label = new JLabel("Height");
         m_height_textfield.setText("0");
-        m_height_textfield.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
+//        m_height_textfield.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
         height_input.add(height_label);
         height_input.add(m_height_textfield);
-        height_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
+//        height_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
         height_input.setAlignmentX(0.5f);
         m_hold_type_bars = new PercentageChooser<Hold.Type>(Hold.Type.getHandTypes());
         m_hold_direction_bars = new PercentageChooser<Hold.Direction>(Hold.Direction.values());

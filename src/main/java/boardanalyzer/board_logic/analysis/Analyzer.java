@@ -8,6 +8,9 @@ import java.awt.image.BufferedImage;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 
+import boardanalyzer.ui.HoldGenerationSettings;
+import boardanalyzer.utils.PerspectiveTransform;
+import boardanalyzer.utils.Vector2;
 import org.kynosarges.tektosyne.geometry.PointD;
 import org.kynosarges.tektosyne.geometry.RectD;
 import org.kynosarges.tektosyne.geometry.Voronoi;

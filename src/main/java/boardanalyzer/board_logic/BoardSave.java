@@ -1,5 +1,7 @@
 package boardanalyzer;
 
+import boardanalyzer.utils.Vector2;
+
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;

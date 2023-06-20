@@ -1,5 +1,7 @@
 package boardanalyzer;
 
+import boardanalyzer.utils.Vector2;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
