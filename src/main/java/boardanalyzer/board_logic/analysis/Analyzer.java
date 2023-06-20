@@ -1,64 +1,15 @@
 package boardanalyzer.board_logic.analysis;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 
 import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.Hold;
-import boardanalyzer.ui.HoldGenerationSettings;
-import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 import org.kynosarges.tektosyne.geometry.PointD;
-import org.kynosarges.tektosyne.geometry.RectD;
-import org.kynosarges.tektosyne.geometry.Voronoi;
-import org.kynosarges.tektosyne.geometry.VoronoiEdge;
-import org.kynosarges.tektosyne.geometry.VoronoiResults;
 
 abstract public class Analyzer {
-	public static class AngleProportions {
-		private final int[] m_angle_buckets;
-		private final int[] m_ideal_proportion;
-
-		AngleProportions(ArrayList<Hold> holds, int[] ideal_proportion) {
-			m_angle_buckets = new int[]{
-					0,
-					0,
-					0,
-					0,
-					0,
-					0
-			};
-
-			for (Hold h : holds) {
-				double dir = h.direction();
-				m_angle_buckets[Hold.Direction.classifyAngle(dir).ordinal()] += 1;
-			}
-
-			m_ideal_proportion = ideal_proportion;
-		}
-		
-		private Hold.Direction getLeastFilledBucket() {
-			Hold.Direction least_filled_bucket = Hold.Direction.UP;
-			double smallest_proportion = Double.POSITIVE_INFINITY;
-			for (Hold.Direction direction_label : Hold.Direction.values()) {
-				double proportion = (double)m_angle_buckets[direction_label.ordinal()] / (double)m_ideal_proportion[direction_label.ordinal()]; 
-				if (proportion < smallest_proportion) {
-					least_filled_bucket = direction_label;
-					smallest_proportion = proportion;
-				}
-			}
-			return least_filled_bucket;
-		}
-		
-		public double getNewAngle() {
-			Hold.Direction least_filled_bucket = getLeastFilledBucket();
-			return Hold.Direction.getRandomAngle(least_filled_bucket);
-		}
-	}
 	
 	protected Board m_board;
 	protected Vector2 m_flat_board_size;

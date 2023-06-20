@@ -114,10 +114,9 @@ public class HoldSuggestionGenerator extends Analyzer {
     }
 
     private double suggestHoldDirectionImpl(FlatBoard b, Vector2 position, Vector2 size) {
-        double default_dir = Hold.Direction.getAngle(Hold.Direction.UP);
         // First check for proximity to top of board, this is the most obvious direction restriction
         if (position.y < b.getBoardHeight() * 0.05) {
-            return default_dir;
+            return Hold.Direction.getAngle(Hold.Direction.UP);
         }
 
         double hold_vicinity_distance = getProximityDistance(b);
@@ -134,8 +133,8 @@ public class HoldSuggestionGenerator extends Analyzer {
             Hold.Direction new_dir = choices.get(r.nextInt(choices.size()));
             return Hold.Direction.getRandomAngle(new_dir);
         }
-        AngleProportions proximate_stats = new AngleProportions(holds_in_proximity, m_hold_direction_pref_ratio);
-        return proximate_stats.getNewAngle();
+        Hold.Direction dir = getLeastFilledHoldDirection(b, position);
+        return Hold.Direction.getRandomAngle(dir);
     }
 
     private double suggestNewHoldSize(FlatBoard b, Vector2 position) throws InvalidAlgorithmParameterException {
@@ -174,13 +173,31 @@ public class HoldSuggestionGenerator extends Analyzer {
         double smallest_proportion = Double.POSITIVE_INFINITY;
         ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
         for (Hold.Type type : types) {
-            double proportion = (double)Board.countType(holds_in_proximity, type) / m_hold_type_pref_ratio[type.ordinal()];
+            double proportion = (double)Board.countType(holds_in_proximity, type) /
+                            (double)m_hold_type_pref_ratio[type.ordinal()];
             if (proportion < smallest_proportion) {
                 least_filled_type = type;
                 smallest_proportion = proportion;
             }
         }
         return least_filled_type;
+    }
+
+    private Hold.Direction getLeastFilledHoldDirection(FlatBoard b, Vector2 position) {
+        Hold.Direction least_filled_direction = Hold.Direction.UP;
+        double smallest_proportion = Double.POSITIVE_INFINITY;
+        double hold_vicinity_distance = getProximityDistance(b);
+        ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
+        for (Hold.Direction direction_label : Hold.Direction.values()) {
+            double proportion =
+                    (double)Board.countDirection(holds_in_proximity, direction_label) /
+                    (double)m_hold_direction_pref_ratio[direction_label.ordinal()];
+            if (proportion < smallest_proportion) {
+                least_filled_direction = direction_label;
+                smallest_proportion = proportion;
+            }
+        }
+        return least_filled_direction;
     }
 
     private HoldGenerationReturnStatus generateLeastCommonTypeHoldImpl(FlatBoard b, Hold new_hold) {

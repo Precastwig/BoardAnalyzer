@@ -112,8 +112,8 @@ public class Board implements Serializable {
 	}
 	
 	public boolean existsHold(int x, int y) {
-		for (Iterator<Hold> it = m_holds.iterator(); it.hasNext();) {
-			if (it.next().contains(x, y)) {
+		for (Hold mHold : m_holds) {
+			if (mHold.contains(x, y)) {
 				return true;
 			}
 		}
@@ -121,8 +121,7 @@ public class Board implements Serializable {
 	}
 	
 	public Hold getHold(int x, int y) throws IllegalAccessException {
-		for (Iterator<Hold> it = m_holds.iterator(); it.hasNext();) {
-			Hold h = it.next();
+		for (Hold h : m_holds) {
 			if (h.contains(x, y)) {
 				return h;
 			}
@@ -133,8 +132,7 @@ public class Board implements Serializable {
 	public Hold getNearestHold(Vector2 p) {
 		double distance = Double.POSITIVE_INFINITY;
 		Hold ret_h = m_holds.get(0);
-		for (Iterator<Hold> it = m_holds.iterator(); it.hasNext();) {
-			Hold h = it.next();
+		for (Hold h : m_holds) {
 			double new_dis = h.getCentrePoint().distanceTo(p);
 			if (new_dis < distance) {
 				ret_h = h;
@@ -186,9 +184,18 @@ public class Board implements Serializable {
 		HashSet<Hold.Type> types = new HashSet<Hold.Type>();
 		types.add(t);
 		int count = 0;
-		for (Iterator<Hold> it = holds.iterator(); it.hasNext();) {
-			Hold h = it.next();
+		for (Hold h : holds) {
 			if (h.isOneOf(types)) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	static public int countDirection(ArrayList<Hold> holds, Hold.Direction dir) {
+		int count = 0;
+		for (Hold h : holds) {
+			if (Hold.Direction.classifyAngle(h.direction()) == dir) {
 				count++;
 			}
 		}
