@@ -163,7 +163,7 @@ public class Board implements Serializable {
             i = next;
         } while (i != 0);
 
-        return (count & 1) == 1 ? true : false;
+        return (count & 1) == 1;
 	}
 	
 	public Optional<Hold> createHold(Vector2 pos) {
@@ -193,6 +193,30 @@ public class Board implements Serializable {
 			}
 		}
 		return count;
+	}
+
+	static public PerspectiveTransform getTransform(Board from, Board to) {
+		ArrayList<Vector2> old_corners = from.getCorners();
+		Vector2 A_old = old_corners.get(0);
+		Vector2 B_old = old_corners.get(1);
+		Vector2 C_old = old_corners.get(2);
+		Vector2 D_old = old_corners.get(3);
+
+		ArrayList<Vector2> to_corners = to.getCorners();
+		Vector2 A_to = to_corners.get(0);
+		Vector2 B_to = to_corners.get(1);
+		Vector2 C_to = to_corners.get(2);
+		Vector2 D_to = to_corners.get(3);
+
+		return PerspectiveTransform.getQuadToQuad(
+				A_old.x, A_old.y,
+				B_old.x, B_old.y,
+				C_old.x, C_old.y,
+				D_old.x, D_old.y,
+				A_to.x, A_to.y,
+				B_to.x, B_to.y,
+				C_to.x, C_to.y,
+				D_to.x, D_to.y);
 	}
 	
 	public Hold.Type getLeastCommonType(HashSet<Hold.Type> ignored_types) throws InvalidAlgorithmParameterException {

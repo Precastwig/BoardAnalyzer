@@ -72,9 +72,9 @@ public final class Analyzer {
 		SUCCESS
 	}
 	
-	public Analyzer(Board board, Vector2 flat_board_size, int[] hold_type_pref_ratio, int[] hold_direction_pref_ratio) {
+	public Analyzer(Board board, Vector2 flat_board_ratio, int[] hold_type_pref_ratio, int[] hold_direction_pref_ratio) {
 		m_board = board;
-		m_flat_board_size = flat_board_size;
+		m_flat_board_size = getFlatBoardSize(flat_board_ratio);
 		m_hold_type_pref_ratio = hold_type_pref_ratio;
 		m_hold_direction_pref_ratio = hold_direction_pref_ratio;
 	}
@@ -98,7 +98,7 @@ public final class Analyzer {
 			Vector2 loc,
 			double min_distance,
 			double max_distance,
-			Board b) {
+			FlatBoard b) {
 		if (!b.isInsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y)) {
 			return false;
 		}
@@ -111,7 +111,7 @@ public final class Analyzer {
 	}
 	
 	private ArrayList<Vector2> getAllPotentialNewHoldLocations(
-			Board b,
+			FlatBoard b,
 			double min_distance,
 			double max_distance,
 			Optional<Hold.Type> hold_type
@@ -164,8 +164,7 @@ public final class Analyzer {
 		return return_list;
 	}
 	
-	// Return the location in the same space as b
-	private Vector2 getNewHoldLocation(Board b) {
+	private Vector2 getNewHoldLocation(FlatBoard b) {
 		ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b, 10, Double.POSITIVE_INFINITY, Optional.empty());
 		if (new_locs.size() < 1) {
 			System.out.println("getAllPotentialNewHoldLocations has not generated any locations!");
@@ -208,7 +207,7 @@ public final class Analyzer {
 //		return new AngleStats(variance, mean_angle);
 //	}
 	
-	private ArrayList<Hold> getHoldsInProximity(Board b, Vector2 position, double range) {
+	private ArrayList<Hold> getHoldsInProximity(FlatBoard b, Vector2 position, double range) {
 		ArrayList<Hold> holds_in_proximity = new ArrayList<Hold>();
 		for (Hold h : b.getHolds()) {
 			if (h.getCentrePoint().distanceTo(position) < range) {
@@ -219,22 +218,22 @@ public final class Analyzer {
 	}
 	
 	public Hold.Type suggestHoldTypes(Hold h) {
-		Board flat_board = flattenBoard();
+		FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
 		flat_board.removeHoldAt(h.position());
 		return getLeastFilledHoldType(flat_board, h.getCentrePoint(), Hold.Type.getHandTypes());
 	}
 	
 	public double suggestHoldDirection(Hold h) {
-		Board flat_board = flattenBoard();
+		FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
 		flat_board.removeHoldAt(h.position());
 		return getNewHoldDirection(flat_board, h.getCentrePoint(), h.size());
 	}
 	
-	private double getProximityDistance(Board b) {
+	private double getProximityDistance(FlatBoard b) {
 		return Math.min(b.getBoardHeight(), b.getBoardWidth()) / 2;
 	}
 	
-	private double getNewHoldDirection(Board b, Vector2 position, Vector2 size) {
+	private double getNewHoldDirection(FlatBoard b, Vector2 position, Vector2 size) {
 		double default_dir = Hold.Direction.getAngle(Hold.Direction.UP);
 		// First check for proximity to top of board, this is the most obvious direction restriction
 		if (position.y < b.getBoardHeight() * 0.05) {
@@ -259,7 +258,7 @@ public final class Analyzer {
 		return proximate_stats.getNewAngle();
 	}
 	
-	private double getNewHoldSize(Board b, Vector2 position) throws InvalidAlgorithmParameterException {
+	private double getNewHoldSize(FlatBoard b, Vector2 position) throws InvalidAlgorithmParameterException {
 		Hold nearest_hold = b.getNearestHold(position);
 		double MAX_HOLD_SIZE = 100;
 		// TODO This does not account for ellipses!
@@ -289,7 +288,7 @@ public final class Analyzer {
 		return min_size + (Math.random() * (max_size - min_size)); 
 	}
 	
-	private Hold.Type getLeastFilledHoldType(Board b, Vector2 position, Hold.Type[] types) {
+	private Hold.Type getLeastFilledHoldType(FlatBoard b, Vector2 position, Hold.Type[] types) {
 		Hold.Type least_filled_type = types[0];
 		double hold_vicinity_distance = getProximityDistance(b);
 		double smallest_proportion = Double.POSITIVE_INFINITY;
@@ -304,17 +303,12 @@ public final class Analyzer {
 		return least_filled_type;
 	}
 	
-	private HoldGenerationReturnStatus generateLeastCommonTypeHoldImpl(Board b, Hold new_hold) {
-		if (b.getHolds().size() <= 1) {
-			// No holds/one hold, do nothing
-			return HoldGenerationReturnStatus.FAILURE;
-		}
+	private HoldGenerationReturnStatus generateLeastCommonTypeHoldImpl(FlatBoard b, Hold new_hold) {
 		try {
 			Vector2 new_loc = getNewHoldLocation(b);
-			new_hold.setPosition(new_loc);
+			new_hold.setCentrePoint(new_loc);
 			Hold.Type type = getLeastFilledHoldType(b, new_loc, Hold.Type.getHandTypes());
 			new_hold.addType(type);
-			System.out.println("Generated hold at " + new_loc.x + "," + new_loc.y);
 			double new_size;
 			new_size = getNewHoldSize(b, new_loc);
 			Vector2 new_size_vector = new Vector2(new_size, new_size);
@@ -330,7 +324,7 @@ public final class Analyzer {
 	}
 		
 	public Optional<Hold> generateHold(HoldGenerationSettings settings) {
-		Board flat_board = flattenBoard();
+		FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
 		Hold new_h = new Hold();
 		
 		HoldGenerationReturnStatus status = HoldGenerationReturnStatus.FAILURE;
@@ -348,14 +342,14 @@ public final class Analyzer {
 			return Optional.empty();
 		}
 		
-		PerspectiveTransform to_old = getTransform(flat_board, m_board);
-		new_h.setPosition(transformPoint(new_h.position(), to_old));
+		PerspectiveTransform to_old = Board.getTransform(flat_board, m_board);
+		new_h.setPosition(flat_board.fromFlat(new_h.position()));
 		
 		return Optional.of(new_h);
 	}
 	
 	private Color getPixelProximityColour(
-			Board b,
+			FlatBoard b,
 			int i, int j, 
 			int brightness_factor, 
 			HashSet<Hold.Type> hold_types_to_show,
@@ -410,7 +404,7 @@ public final class Analyzer {
 			boolean hold_types_exact_match,
 			boolean hold_direction_matters) {
 		//MainWindow.m_instruction_panel.showProgressBar();
-		Board flat_board = flattenBoard();
+		FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
 		Vector2 image_size = flat_board.getBoardSize();
 		//MainWindow.m_instruction_panel.updateProgressBarRange(0, (int)image_size.x);
 		BufferedImage image = new BufferedImage(
@@ -435,8 +429,8 @@ public final class Analyzer {
 		return image;
 	}
 	
-	private Vector2 getFlatBoardSize() {
-		double ratio = m_flat_board_size.x / m_flat_board_size.y;
+	private Vector2 getFlatBoardSize(Vector2 flat_board_ratio) {
+		double ratio = flat_board_ratio.x / flat_board_ratio.y;
 		
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		double screen_width = screenSize.getWidth();
@@ -450,79 +444,5 @@ public final class Analyzer {
 		}
 		
 		return new Vector2(new_width, new_height);
-	}
-		
-	private Vector2 transformPoint(
-			Vector2 point, 
-			PerspectiveTransform pt
-			) {
-		 Point2D.Double[] out_arr = {new Point2D.Double(0,0)};
-		 Point2D.Double[] in_arr = {point.toPoint2D()};
-		 pt.transform(in_arr, 0, out_arr, 0, 1);
-		 // This could be done all at once, but we still have to loop through the output
-		 // and create each hold, so not actually much simpler
-		 return new Vector2(out_arr[0]);
-	}
-	
-	private PerspectiveTransform getTransform(Board from, Board to) {
-		ArrayList<Vector2> old_corners = from.getCorners();
-		Vector2 A_old = old_corners.get(0);
-		Vector2 B_old = old_corners.get(1);
-		Vector2 C_old = old_corners.get(2);
-		Vector2 D_old = old_corners.get(3);
-		
-		ArrayList<Vector2> to_corners = to.getCorners();
-		Vector2 A_to = to_corners.get(0);
-		Vector2 B_to = to_corners.get(1);
-		Vector2 C_to = to_corners.get(2);
-		Vector2 D_to = to_corners.get(3);
-		
-		return PerspectiveTransform.getQuadToQuad(
-				 A_old.x, A_old.y,
-				 B_old.x, B_old.y,
-				 C_old.x, C_old.y,
-				 D_old.x, D_old.y,
-				 A_to.x, A_to.y,
-				 B_to.x, B_to.y,
-				 C_to.x, C_to.y,
-				 D_to.x, D_to.y);
-	}
-	
-	private Board flattenBoard() {
-		Board flat_board = new Board();
-		Vector2 flat_board_size = getFlatBoardSize();
-		flat_board.setBoardDimensions(flat_board_size.x, flat_board_size.y);
-		
-		flat_board.addCorner(new Vector2(0,0));
-		flat_board.addCorner(new Vector2(flat_board_size.x, 0));
-		flat_board.addCorner(new Vector2(flat_board_size.x, flat_board_size.y));
-		flat_board.addCorner(new Vector2(0, flat_board_size.y));
-		
-		PerspectiveTransform transformToFlat = getTransform(m_board, flat_board);
-		
-		ArrayList<Hold> old_holds = m_board.getHolds();
-		for (Iterator<Hold> it = old_holds.iterator(); it.hasNext();) {
-			Hold h = it.next();
-			Vector2 new_pos = transformPoint(
-					new Vector2(h.position().x, h.position().y), transformToFlat);
-			Vector2 old_size_pos = BoardFrame.getPointOnCircleFromRad(h.direction(), h.getCentrePoint(), h.size());
-			Vector2 new_size_pos = transformPoint(old_size_pos, transformToFlat);
-			
-			Vector2 new_direction_size_vector = new Vector2(
-					new_size_pos.x - new_pos.x, new_size_pos.y - new_pos.y
-					);
-			
-			double old_size_ratio = h.size().x / h.size().y;
-			
-			Hold flat_hold = 
-					new Hold(new_pos, 
-							new Vector2(old_size_ratio * new_direction_size_vector.length(), new_direction_size_vector.length()), 
-							h.direction());
-			flat_hold.addTypes(h.getTypes());
-			flat_board.addHold(flat_hold);
-		}
-		System.out.println("Regular board size: " + m_board.getBoardWidth() + ", " + m_board.getBoardHeight());
-		System.out.println("Flat board size: " + flat_board.getBoardWidth() + ", " + flat_board.getBoardHeight());
-		return flat_board;
 	}
 }
