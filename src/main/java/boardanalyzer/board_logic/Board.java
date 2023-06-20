@@ -1,4 +1,4 @@
-package boardanalyzer;
+package boardanalyzer.board_logic;
 
 import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
@@ -16,7 +16,7 @@ public class Board implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private ArrayList<Hold> m_holds; 
+	private ArrayList<Hold> m_holds;
 	// Hold positions are stored in image space
 	// This is probably not a good idea
 	private ArrayList<Vector2> m_board_corners;

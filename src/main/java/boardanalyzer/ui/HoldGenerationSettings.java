@@ -1,4 +1,6 @@
-package boardanalyzer;
+package boardanalyzer.ui;
+
+import boardanalyzer.board_logic.Hold;
 
 import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;

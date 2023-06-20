@@ -1,5 +1,6 @@
-package boardanalyzer;
+package boardanalyzer.ui;
 
+import boardanalyzer.board_logic.Hold;
 import boardanalyzer.ui.basic_elements.PercentageChooser;
 import boardanalyzer.utils.Vector2;
 

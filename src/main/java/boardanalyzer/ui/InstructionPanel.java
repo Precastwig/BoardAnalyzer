@@ -1,4 +1,4 @@
-package boardanalyzer;
+package boardanalyzer.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;

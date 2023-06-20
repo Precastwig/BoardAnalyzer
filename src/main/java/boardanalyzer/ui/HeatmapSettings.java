@@ -1,13 +1,12 @@
-package boardanalyzer;
+package boardanalyzer.ui;
 
-import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashSet;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import boardanalyzer.Hold.Type;
+import boardanalyzer.board_logic.Hold.Type;
 
 public class HeatmapSettings extends JPanel {
 	JSlider m_brightness_slider;

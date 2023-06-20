@@ -1,4 +1,7 @@
-package boardanalyzer;
+package boardanalyzer.ui;
+
+import boardanalyzer.board_logic.Hold;
+import boardanalyzer.utils.Vector2;
 
 import java.awt.GridLayout;
 import java.text.DecimalFormat;

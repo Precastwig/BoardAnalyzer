@@ -1,4 +1,6 @@
-package boardanalyzer;
+package boardanalyzer.ui.basic_elements;
+
+import boardanalyzer.ui.basic_elements.BarWithButtons;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;

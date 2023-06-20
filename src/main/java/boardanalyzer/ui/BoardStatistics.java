@@ -1,4 +1,4 @@
-package boardanalyzer;
+package boardanalyzer.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -12,7 +12,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
-import boardanalyzer.Hold.Type;
+import boardanalyzer.ui.basic_elements.BarChart;
+import boardanalyzer.board_logic.Board;
+import boardanalyzer.board_logic.Hold;
+import boardanalyzer.board_logic.Hold.Type;
 
 public class BoardStatistics extends JPanel {
 	

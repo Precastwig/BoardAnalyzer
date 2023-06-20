@@ -1,5 +1,13 @@
 package boardanalyzer;
 
+import boardanalyzer.board_logic.BoardSave;
+import boardanalyzer.board_logic.Hold;
+import boardanalyzer.board_logic.analysis.Analyzer;
+import boardanalyzer.ui.*;
+import boardanalyzer.ui.basic_elements.BoardFileFilter;
+import boardanalyzer.ui.basic_elements.ImageFileFilter;
+import boardanalyzer.utils.Vector2;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;

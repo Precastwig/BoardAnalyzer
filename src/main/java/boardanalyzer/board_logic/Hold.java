@@ -1,4 +1,4 @@
-package boardanalyzer;
+package boardanalyzer.board_logic;
 
 import boardanalyzer.utils.Vector2;
 

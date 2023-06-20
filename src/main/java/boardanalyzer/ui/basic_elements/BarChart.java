@@ -1,4 +1,4 @@
-package boardanalyzer;
+package boardanalyzer.ui.basic_elements;
 
 import java.awt.Color;
 import java.awt.Dimension;

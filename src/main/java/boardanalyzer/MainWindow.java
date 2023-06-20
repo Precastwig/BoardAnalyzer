@@ -1,5 +1,7 @@
 package boardanalyzer;
 
+import boardanalyzer.ui.*;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -114,13 +116,14 @@ public class MainWindow {
         // Tabbed Panels
         BoardStatistics board_stats = new BoardStatistics(show_hold_stats);
         HeatmapSettings heatmap_settings_panel = new HeatmapSettings();
+		heatmap_settings_panel.setPreferredSize(new Dimension(PREFERRED_GENERATE_TAB_WIDTH, 600));
         BoardSettings board_settings_panel = new BoardSettings(
         		new_board_button, 
         		save_settings_button, 
         		set_board_corners_button, 
         		clear_all_holds_button, 
         		open_board_button);
-        HoldSelectionSettings hold_selection_settings = 
+        HoldSelectionSettings hold_selection_settings =
         		new HoldSelectionSettings(save_hold_button, delete_hold_button,
         				suggest_type_button, suggest_direction_button);
         HoldGenerationSettings hold_generation_settings = new HoldGenerationSettings();

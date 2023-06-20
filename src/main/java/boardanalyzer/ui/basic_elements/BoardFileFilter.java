@@ -1,4 +1,6 @@
-package boardanalyzer;
+package boardanalyzer.ui.basic_elements;
+
+import boardanalyzer.BoardFrame;
 
 import java.io.File;
 

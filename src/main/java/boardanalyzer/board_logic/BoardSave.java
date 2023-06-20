@@ -1,5 +1,6 @@
-package boardanalyzer;
+package boardanalyzer.board_logic;
 
+import boardanalyzer.board_logic.Board;
 import boardanalyzer.utils.Vector2;
 
 import java.awt.Image;

@@ -1,4 +1,4 @@
-package boardanalyzer;
+package boardanalyzer.board_logic.analysis;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -8,6 +8,9 @@ import java.awt.image.BufferedImage;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 
+import boardanalyzer.BoardFrame;
+import boardanalyzer.board_logic.Board;
+import boardanalyzer.board_logic.Hold;
 import boardanalyzer.ui.HoldGenerationSettings;
 import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
