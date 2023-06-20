@@ -19,6 +19,8 @@ public class BoardSave implements Serializable {
 	transient public Image m_board_image;
 	public int[] m_hold_type_ratio;
 	public int[] m_hold_direction_ratio;
+	public int m_hold_minimum_size;
+	public int m_hold_maximum_size;
 	
 	// This class is a wrapper for all the objects we want to save to file
 	// Everything contained within this class should be
@@ -34,6 +36,8 @@ public class BoardSave implements Serializable {
 		m_hold_direction_ratio = new int[] {
 				0,0,0,0,0,0
 		};
+		m_hold_minimum_size = 0;
+		m_hold_maximum_size = Integer.MAX_VALUE;
 	}
 	
 	private void writeObject(ObjectOutputStream out) throws IOException {

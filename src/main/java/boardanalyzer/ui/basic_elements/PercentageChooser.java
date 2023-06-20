@@ -35,6 +35,13 @@ public class PercentageChooser<Type> extends JPanel implements ActionListener {
 		}
 		return ratio;
 	}
+
+	public void setRatio(int[] ratio) {
+		for (int i = 0; i < m_all_types.length; i++) {
+			m_bars.get(i).m_value = ratio[i];
+		}
+		updateBarPercentages();
+	}
 	
 	private void updateBarPercentages() {
 		int total = 0;

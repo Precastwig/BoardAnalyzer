@@ -14,18 +14,25 @@ public class HoldSuggestionGenerator extends Analyzer {
 
     private final int[] m_hold_type_pref_ratio;
     private final int[] m_hold_direction_pref_ratio;
+
+    private final int m_hold_size_min;
+    private final int m_hold_size_max;
     public HoldSuggestionGenerator(
             Board board,
             Vector2 flat_board_ratio,
             int[] hold_type_pref_ratio,
-            int[] hold_direction_pref_ratio) {
+            int[] hold_direction_pref_ratio,
+            int hold_size_min,
+            int hold_size_max) {
         super(board,  flat_board_ratio);
+        m_hold_size_min = hold_size_min;
+        m_hold_size_max = hold_size_max;
         m_hold_type_pref_ratio = hold_type_pref_ratio;
 		m_hold_direction_pref_ratio = hold_direction_pref_ratio;
     }
 
     private Vector2 suggestHoldLocationImpl(FlatBoard b) {
-        ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b, 10, Double.POSITIVE_INFINITY, Optional.empty());
+        ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
         if (new_locs.size() < 1) {
             System.out.println("getAllPotentialNewHoldLocations has not generated any locations!");
         }
@@ -35,10 +42,7 @@ public class HoldSuggestionGenerator extends Analyzer {
     }
 
     private ArrayList<Vector2> getAllPotentialNewHoldLocations(
-            FlatBoard b,
-            double min_distance,
-            double max_distance,
-            Optional<Hold.Type> hold_type
+            FlatBoard b
     ) {
         ArrayList<Vector2> return_list = new ArrayList<Vector2>();
         ArrayList<Hold> holds = b.getHolds();
@@ -64,9 +68,9 @@ public class HoldSuggestionGenerator extends Analyzer {
         PointD[] points = v.voronoiVertices;
 
         // Trim this set of points using distances
-        for (int i = 0; i < points.length; i++) {
-            Vector2 p = new Vector2(points[i]);
-            if (checkLocationValid(p, min_distance, max_distance, b)) {
+        for (PointD point : points) {
+            Vector2 p = new Vector2(point);
+            if (checkLocationValid(p, m_hold_size_min, b)) {
                 return_list.add(p);
             }
         }
@@ -80,7 +84,7 @@ public class HoldSuggestionGenerator extends Analyzer {
 
             Vector2 line = new Vector2(p1.x - p2.x, p1.y - p2.y);
             Vector2 p = new Vector2(p2.x + 0.5 * line.x, p2.y + 0.5 * line.y);
-            if (checkLocationValid(p, min_distance, max_distance, b)) {
+            if (checkLocationValid(p, m_hold_size_min, b)) {
                 return_list.add(p);
             }
         }
@@ -91,14 +95,17 @@ public class HoldSuggestionGenerator extends Analyzer {
     private boolean checkLocationValid(
             Vector2 loc,
             double min_distance,
-            double max_distance,
             FlatBoard b) {
-        if (!b.isInsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y)) {
+        if (!b.isInsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y) ||
+            loc.x < min_distance || loc.y < min_distance ||
+                b.getBoardWidth() - loc.x < min_distance ||
+                b.getBoardHeight() - loc.y < min_distance) {
             return false;
         }
         Hold nearest_hold = b.getNearestHold(loc);
-        double dist = nearest_hold.getCentrePoint().distanceTo(loc);
-        return min_distance < dist && dist < max_distance;
+        /// TODO this needs to account for ellipses                      vvvvvvvvvvvvv
+        double dist = nearest_hold.getCentrePoint().distanceTo(loc) - nearest_hold.size().x;
+        return min_distance < dist;
     }
 
     public Hold.Type suggestHoldType(Hold h) {
@@ -138,33 +145,20 @@ public class HoldSuggestionGenerator extends Analyzer {
     }
 
     private double suggestNewHoldSize(FlatBoard b, Vector2 position) throws InvalidAlgorithmParameterException {
-        Hold nearest_hold = b.getNearestHold(position);
-        double MAX_HOLD_SIZE = 100;
-        // TODO This does not account for ellipses!
-        double min_size = 30;
-        for (Hold h : b.getHolds()) {
-            Vector2 hold_size = h.size();
-            double hold_size_max = Math.max(hold_size.x, hold_size.y);
-            double hold_sizemin = Math.min(hold_size.x, hold_size.y);
-            if (hold_sizemin < min_size) {
-                min_size = hold_sizemin;
-            }
-            if (hold_size_max > MAX_HOLD_SIZE) {
-                MAX_HOLD_SIZE = hold_size_max;
-            }
-        }
-        double max_size =
-                Math.min(nearest_hold.getCentrePoint().distanceTo(position) -
-                        Math.max(nearest_hold.size().x, nearest_hold.size().y), MAX_HOLD_SIZE);
+        double max_size = m_hold_size_max;
+        if (b.getHolds().size() != 0) {
+            Hold nearest_hold = b.getNearestHold(position);
+            // TODO This does not account for ellipses!
+            max_size = nearest_hold.getCentrePoint().distanceTo(position) - nearest_hold.size().x;
 
-
-        if (max_size < min_size) {
-            // Problem
-            throw new InvalidAlgorithmParameterException("getNewHoldSize failure");
+            if (max_size < m_hold_size_min) {
+                throw new InvalidAlgorithmParameterException();
+            }
+            max_size = Math.min(m_hold_size_max, max_size);
         }
 
         // Generate a random size between the smallest and largest
-        return min_size + (Math.random() * (max_size - min_size));
+        return m_hold_size_min + (Math.random() * (max_size - m_hold_size_min));
     }
 
     private Hold.Type getLeastFilledHoldType(FlatBoard b, Vector2 position, Hold.Type[] types) {

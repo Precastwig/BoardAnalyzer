@@ -2,6 +2,7 @@ package boardanalyzer.board_logic;
 
 import boardanalyzer.utils.Vector2;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,6 +11,7 @@ public class Hold implements Serializable{
 	/**
 	 * 
 	 */
+	@Serial
 	private static final long serialVersionUID = 1L;
 	
 	// Holds can be any combination of the below categories
@@ -168,7 +170,9 @@ public class Hold implements Serializable{
 	}
 	
 	public void setSize(Vector2 s) {
+		Vector2 prev_centre_point = getCentrePoint();
 		m_size = new Vector2(s);
+		setCentrePoint(prev_centre_point);
 	}
 	
 	public double direction() {

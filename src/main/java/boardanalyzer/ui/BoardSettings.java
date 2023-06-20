@@ -44,8 +44,27 @@ public class BoardSettings extends JPanel {
 			add(max_input);
 		}
 		
-		public int getHoldSizePreference() throws NumberFormatException {
-			return Integer.parseInt(m_min_textfield.getText());
+		public int getHoldSizeMin() throws NumberFormatException {
+			int ret = Integer.parseInt(m_min_textfield.getText());
+			if (ret < 0) {
+				throw new NumberFormatException();
+			}
+			return ret;
+		}
+		public int getHoldSizeMax() throws NumberFormatException {
+			int ret = Integer.parseInt(m_max_textfield.getText());
+			if (ret < 0) {
+				throw new NumberFormatException();
+			}
+			return ret;
+		}
+
+		public void setHoldSizeMin(int min) {
+			m_min_textfield.setText(String.valueOf(min));
+		}
+
+		public void setHoldSizeMax(int max) {
+			m_max_textfield.setText(String.valueOf(max));
 		}
 	}
 	
@@ -119,9 +138,33 @@ public class BoardSettings extends JPanel {
 		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.SOUTH);
         add(inner_panel, BorderLayout.CENTER);
 	}
+
+	public int getHoldSizeMin() throws NumberFormatException {
+		return m_hold_size.getHoldSizeMin();
+	}
+
+	public void setHoldSizeMin(int min) {
+		m_hold_size.setHoldSizeMin(min);
+	}
+
+	public void setHoldSizeMax(int max) {
+		m_hold_size.setHoldSizeMax(max);
+	}
+
+	public int getHoldSizeMax() throws NumberFormatException {
+		return m_hold_size.getHoldSizeMax();
+	}
 	
 	public int[] getHoldTypeRatio() {
 		return m_hold_type_bars.getRatio();
+	}
+
+	public void setHoldTypeRatio(int[] ratio) {
+		m_hold_type_bars.setRatio(ratio);
+	}
+
+	public void setHoldDirectionRatio(int [] ratio) {
+		m_hold_direction_bars.setRatio(ratio);
 	}
 	
 	public int[] getHoldDirectionRatio() {

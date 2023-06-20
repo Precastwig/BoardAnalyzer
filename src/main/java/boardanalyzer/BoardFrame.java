@@ -90,43 +90,67 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         this.setLayout(new GridLayout(3, 1, 50, 200));
         this.setBackground(Color.white);
 	}
+
+	public static Color blend(ArrayList<Color> colour_list) {
+		if (colour_list == null || colour_list.size() <= 0) {
+			return null;
+		}
+		float ratio = 1f / ((float) colour_list.size());
+
+		int a = 0;
+		int r = 0;
+		int g = 0;
+		int b = 0;
+
+		for (Color color : colour_list) {
+			int rgb = color.getRGB();
+			int a1 = (rgb >> 24 & 0xff);
+			int r1 = ((rgb & 0xff0000) >> 16);
+			int g1 = ((rgb & 0xff00) >> 8);
+			int b1 = (rgb & 0xff);
+			a += ((int) a1 * ratio);
+			r += ((int) r1 * ratio);
+			g += ((int) g1 * ratio);
+			b += ((int) b1 * ratio);
+		}
+
+		return new Color(a << 24 | r << 16 | g << 8 | b);
+	}
 	
 	public Color getColorFromHold(Hold h) {
-		int red = 126;
-		int blue = 126;
-		int green = 126;
-		int alpha = 170;
+		int alpha = 255;
 		if (m_state == AppState.HOLD_SELECTED) {
 			if (h != m_selected_hold) {
 				alpha = 126;
-			} else {
-				alpha = 255;
 			}
-		} else if (m_state == AppState.WAITING) {
-			if (h.contains(m_mouse_x, m_mouse_y)) { 
-				alpha = 255;
-			}
-		}
-		if (h.isCrimp()) {
-			red = 0;
 		}
 		if (h.isFoot()) {
-			red = 255;
+			return new Color(0,0,0, alpha);
 		}
+
+		ArrayList<Color> colours = new ArrayList<Color>();
+
+
 		if (h.isJug()) {
-			blue = 0;
+			colours.add(new Color(49, 141, 49));
+		}
+		if (h.isCrimp()) {
+			colours.add(new Color(176, 62, 62));
 		}
 		if (h.isPinch()) {
-			blue = 255;
+			colours.add(new Color(68,51,121));
 		}
 		if (h.isPocket()) {
-			green = 0;
+			colours.add(new Color(141,49,101));
 		}
 		if (h.isSloper()) {
-			green = 255;
+			colours.add(new Color(176,156,62));
 		}
-		
-		return new Color(red, blue, green, alpha);
+		Color col = blend(colours);
+		if (col == null) {
+			return Color.GRAY;
+		}
+		return new Color(col.getRed(), col.getGreen(), col.getBlue(), alpha);
 	}
 	
 	static public Vector2 getPointOnCircleFromRad(double rad, Vector2 circle_centre, Vector2 circle_size) {
@@ -155,7 +179,6 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			if (!holds.isEmpty()) {
 				for (Hold h : holds) {
 					Color c = getColorFromHold(h);
-					g2.setColor(c);
 					Vector2 circle_size = h.size();
 					double direction = h.direction();
 					int circle_pos_x = (int) h.position().x;
@@ -169,6 +192,10 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 						circle_pos_y = (int) m_hold_selection_settings.getHoldPosition().y;
 						// Make line width thicker for circle
 						lineWidth = 7;
+						Shape highlight = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
+						g2.setStroke(new BasicStroke(lineWidth + 5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
+						g2.setColor(Color.WHITE);
+						g2.draw(highlight);
 					}
 
 					Vector2 circle_centre = h.getCentrePoint();
@@ -179,6 +206,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 									circle_size
 							);
 
+					g2.setColor(c);
 					g2.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
 
 					g2.drawLine(
@@ -246,7 +274,6 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		} else if (Objects.equals(e.getActionCommand(), "OpenBoard")) {
 			openBoard();
 		} else if (Objects.equals(e.getActionCommand(), "Save")) {
-			saveSettings();
 			saveBoard(m_current_loaded_board_file);
 		} else if (Objects.equals(e.getActionCommand(), "SaveHold")) {
 			saveSelectedHold();
@@ -269,6 +296,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		} else if (Objects.equals(e.getActionCommand(), "SuggestHoldDirection")) {
 			suggestHoldDirection();
 		}
+		m_board_statistics.updateLabels(m_board_save.m_board); // Inefficient, but covers our bases
 		repaint();
 	}
 	
@@ -278,7 +306,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 					m_board_save.m_board, 
 					m_board_save.m_board_dimensions,
 					m_board_save.m_hold_type_ratio, 
-					m_board_save.m_hold_direction_ratio);
+					m_board_save.m_hold_direction_ratio,
+					m_board_save.m_hold_minimum_size,
+					m_board_save.m_hold_maximum_size);
 			Hold.Type new_type = generator.suggestHoldType(m_selected_hold);
 			m_hold_selection_settings.setToHoldType(new_type);
 		}
@@ -290,7 +320,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 					m_board_save.m_board,
 					m_board_save.m_board_dimensions,
 					m_board_save.m_hold_type_ratio, 
-					m_board_save.m_hold_direction_ratio);
+					m_board_save.m_hold_direction_ratio,
+					m_board_save.m_hold_minimum_size,
+					m_board_save.m_hold_maximum_size);
 			double new_dir = generator.suggestHoldDirection(m_selected_hold);
 			m_hold_selection_settings.setDirection(new_dir);
 		}
@@ -353,6 +385,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		m_selected_hold = null;
 		m_hold_selection_settings.disableAll();
 		m_board_save.m_board.clearAllHolds();
+		setWaitingState();
 	}
 	
 	private void showHoldStats() {
@@ -373,7 +406,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				m_board_save.m_board,
 				m_board_save.m_board_dimensions,
 				m_board_save.m_hold_type_ratio, 
-				m_board_save.m_hold_direction_ratio);
+				m_board_save.m_hold_direction_ratio,
+				m_board_save.m_hold_minimum_size,
+				m_board_save.m_hold_maximum_size);
 		Optional<Hold> new_hold = generator.generateHold(m_hold_generation_settings);
 		if (new_hold.isPresent()) {
 			m_board_save.m_board.addHold(new_hold.get());
@@ -385,6 +420,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void saveBoard(File file) {
+		saveSettings();
 		FileOutputStream f;
 		try {
 			f = new FileOutputStream(file);
@@ -433,7 +469,13 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		try {
 			m_board_save.m_board_dimensions = m_board_settings.getBoardDimensions();
 		} catch (java.lang.NumberFormatException e) {
-			System.out.println("Board not saved, error in width or height");
+			MainWindow.setInstructionText("Board dimensions in non-number format");
+		}
+		try {
+			m_board_save.m_hold_minimum_size = m_board_settings.getHoldSizeMin();
+			m_board_save.m_hold_maximum_size = m_board_settings.getHoldSizeMax();
+		} catch (java.lang.NumberFormatException e) {
+			MainWindow.setInstructionText("Hold size min/max in non-number format");
 		}
 		m_board_save.m_hold_type_ratio = m_board_settings.getHoldTypeRatio();
 		m_board_save.m_hold_direction_ratio = m_board_settings.getHoldDirectionRatio();
@@ -510,6 +552,10 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			m_board_save = (BoardSave)oi.readObject();
 			oi.close();
 			m_board_settings.setBoardDimensions(m_board_save.m_board_dimensions);
+			m_board_settings.setHoldSizeMin(m_board_save.m_hold_minimum_size);
+			m_board_settings.setHoldSizeMax(m_board_save.m_hold_maximum_size);
+			m_board_settings.setHoldTypeRatio(m_board_save.m_hold_type_ratio);
+			m_board_settings.setHoldDirectionRatio(m_board_save.m_hold_direction_ratio);
 			MainWindow.m_frame.setSize(
 					(int)m_board_save.m_board.getBoardWidth(), 
 					(int)m_board_save.m_board.getBoardHeight());
@@ -542,6 +588,11 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void saveSelectedHold() {
+		if (m_selected_hold == null) {
+			// nothing to do
+			return;
+		}
+
 		if (m_hold_selection_settings.isCrimp()) {
 			m_selected_hold.addType(Hold.Type.CRIMP);
 		}
@@ -588,6 +639,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
        	if (m_state == AppState.WAITING) {
         	if (m_board_save.m_board.existsHold(x, y)) {
         		try {
+					saveSelectedHold();
 					selectHold(m_board_save.m_board.getHold(x, y));
 				} catch (IllegalAccessException e) {
 					System.out.println("Can't find hold! Logic mismatch in existshold and gethold");
@@ -697,6 +749,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         @Override
         public void mouseMoved(MouseEvent e) {
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
+			m_mouse_x = e.getX();
+			m_mouse_y = e.getY();
         }
     }
 
