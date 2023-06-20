@@ -46,6 +46,8 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private int m_mouse_y;
 	private boolean m_dragging_direction;
 	private boolean m_dragging_width;
+	private boolean m_dragging_location;
+	private Vector2 m_dragging_original_pos;
 	
 	private Hold m_selected_hold;
 	private final HoldSelectionSettings m_hold_selection_settings;
@@ -179,39 +181,45 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			if (!holds.isEmpty()) {
 				for (Hold h : holds) {
 					Color c = getColorFromHold(h);
-					Vector2 circle_size = h.size();
-					double direction = h.direction();
-					int circle_pos_x = (int) h.position().x;
-					int circle_pos_y = (int) h.position().y;
+					Hold hold_to_render = h;
 					int lineWidth = 5;
-
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
-						circle_size = m_hold_selection_settings.getHoldSize();
-						direction = m_hold_selection_settings.getDirection();
-						circle_pos_x = (int) m_hold_selection_settings.getHoldPosition().x;
-						circle_pos_y = (int) m_hold_selection_settings.getHoldPosition().y;
-						// Make line width thicker for circle
-						lineWidth = 7;
-						Shape highlight = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
-						g2.setStroke(new BasicStroke(lineWidth + 5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
-						g2.setColor(Color.WHITE);
-						g2.draw(highlight);
+						hold_to_render = m_hold_selection_settings.getNewHold();
+						lineWidth += 2;
 					}
+					Vector2 circle_size = hold_to_render.size();
+					double direction = hold_to_render.direction();
+					int circle_pos_x = (int) hold_to_render.position().x;
+					int circle_pos_y = (int) hold_to_render.position().y;
 
-					Vector2 circle_centre = h.getCentrePoint();
-					Vector2 point_on_circle_towards_mouse =
+					Vector2 circle_centre = hold_to_render.getCentrePoint();
+					Vector2 point_on_circle_in_dir =
 							getPointOnCircleFromRad(
 									direction,
 									circle_centre,
 									circle_size
 							);
 
+					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
+						// Draw background highlight
+						Shape highlight = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
+						g2.setStroke(new BasicStroke(lineWidth + 5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
+						g2.setColor(Color.WHITE);
+						g2.draw(highlight);
+						g2.drawLine(
+								(int) point_on_circle_in_dir.x,
+								(int) point_on_circle_in_dir.y,
+								(int) circle_centre.x,
+								(int) circle_centre.y
+						);
+					}
+
 					g2.setColor(c);
 					g2.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
 
 					g2.drawLine(
-							(int) point_on_circle_towards_mouse.x,
-							(int) point_on_circle_towards_mouse.y,
+							(int) point_on_circle_in_dir.x,
+							(int) point_on_circle_in_dir.y,
 							(int) circle_centre.x,
 							(int) circle_centre.y
 					);
@@ -593,6 +601,12 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 
+		if (!m_board_save.m_board.isInsideBorders(m_hold_selection_settings.getHoldPosition())) {
+			selectHold(m_selected_hold);
+			MainWindow.setInstructionText("Error! Cannot place hold outside of border");
+			return;
+		}
+
 		if (m_hold_selection_settings.isCrimp()) {
 			m_selected_hold.addType(Hold.Type.CRIMP);
 		}
@@ -630,6 +644,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		m_hold_selection_settings.setHoldSize(
 				m_selected_hold.size(), 
 				m_selected_hold);
+		m_hold_selection_settings.setPosition(m_selected_hold.position());
 		m_state = AppState.HOLD_SELECTED;
 		m_hold_selection_settings.enableAll();
 	}
@@ -687,11 +702,13 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         	int y = e.getY();
         	
         	if (m_state == AppState.HOLD_SELECTED) {
-        		if (m_selected_hold.contains(x, y)) {
+        		if (m_hold_selection_settings.getNewHold().contains(x, y)) {
         			m_dragging_direction = true;
-        			
         		} else {
-        			m_dragging_width = true;
+					m_mouse_x = e.getX();
+					m_mouse_y = e.getY();
+					m_dragging_location = true;
+					m_dragging_original_pos = m_hold_selection_settings.getHoldPosition();
         		}
         	}
         }
@@ -700,6 +717,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         	if (m_state == AppState.HOLD_SELECTED) {
         		m_dragging_direction = false;
         		m_dragging_width = false;
+				m_dragging_location = false;
         	}
         }
 
@@ -743,14 +761,22 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 //    			m_selected_hold.direction();
 				//// TODO make ellipse creation work, a lot of underlying functions in analysis will require changing too
     			repaint();
-    		}
+    		} else if (m_dragging_location) {
+				int x = e.getX();
+				int y = e.getY();
+				Vector2 mouse_movement = new Vector2(x - m_mouse_x, y - m_mouse_y);
+				//System.out.println("(" + mouse_movement.x + ", " + mouse_movement.y + ")");
+				Vector2 new_pos = new Vector2(m_dragging_original_pos.x + mouse_movement.x, m_dragging_original_pos.y + mouse_movement.y);
+				m_hold_selection_settings.setPosition(new_pos);
+				repaint();
+			}
         }
 
         @Override
         public void mouseMoved(MouseEvent e) {
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
-			m_mouse_x = e.getX();
-			m_mouse_y = e.getY();
+//			m_mouse_x = e.getX();
+//			m_mouse_y = e.getY();
         }
     }
 

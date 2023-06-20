@@ -56,6 +56,11 @@ public class BoardSettings extends JPanel {
 			if (ret < 0) {
 				throw new NumberFormatException();
 			}
+			int min = getHoldSizeMin();
+			if (ret < min) {
+				System.out.println("Max is smaller than min!");
+				return min + 1;
+			}
 			return ret;
 		}
 

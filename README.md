@@ -11,8 +11,6 @@ Java is one of the easiest languages with the best inherent GUI design, so java 
 
 ### To do
 - Force every hold to have a type
-- Make selected hold more obvious
-- Fix colours for different hold types?
 - Change hold direction/type suggestions based upon location (less sidepulls near the edge, only feet at the bottom)
 - Show progress bar during long generations/Put them on a seperate thread
 - Auto hold discovery (grumble?)

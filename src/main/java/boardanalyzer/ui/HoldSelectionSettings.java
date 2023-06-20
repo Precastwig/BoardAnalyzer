@@ -21,10 +21,8 @@ public class HoldSelectionSettings extends JPanel {
 	private JButton m_suggest_type_button;
 	private JButton m_suggest_direction_button;
 	private JLabel m_direction_label;
-	private double m_direction_rad;
 	private JLabel m_size_label;
-	private Vector2 m_size;
-	private Vector2 m_new_pos;
+	private Hold m_new_hold;
 	public HoldSelectionSettings(
 			JButton save_hold_button, 
 			JButton delete_hold_button, 
@@ -37,6 +35,8 @@ public class HoldSelectionSettings extends JPanel {
 			m_hold_type_checkboxes.add(cb);
 			add(cb);
 		}
+
+		m_new_hold = new Hold();
 		
 		m_direction_label = new JLabel("Direction: --");
 		add(m_direction_label);
@@ -86,16 +86,18 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public double getDirection() {
-		return m_direction_rad;
+		return m_new_hold.direction();
 	}
 	
 	public Vector2 getHoldSize() {
-		return m_size;
+		return m_new_hold.size();
 	}
 	
 	public Vector2 getHoldPosition() {
-		return m_new_pos;
+		return m_new_hold.position();
 	}
+
+	public Hold getNewHold() {return m_new_hold;};
 	
 	public void setToHoldType(Hold.Type type) {
 		setCrimp(true);
@@ -104,26 +106,14 @@ public class HoldSelectionSettings extends JPanel {
 		setPocket(false);
 		setFoot(false);
 		setPinch(false);
-		
+
 		switch (type) {
-		case CRIMP:
-			setCrimp(true);
-			break;
-		case JUG:
-			setJug(true);
-			break;
-		case SLOPER:
-			setSloper(true);
-			break;
-		case POCKET:
-			setPocket(true);
-			break;
-		case FOOT:
-			setFoot(true);
-			break;
-		case PINCH:
-			setPinch(true);
-			break;
+			case CRIMP -> setCrimp(true);
+			case JUG -> setJug(true);
+			case SLOPER -> setSloper(true);
+			case POCKET -> setPocket(true);
+			case FOOT -> setFoot(true);
+			case PINCH -> setPinch(true);
 		}
 	}
 	
@@ -152,7 +142,7 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public void setDirection(double rad) {
-		m_direction_rad = rad;
+		m_new_hold.setDirection(rad);
 		double adjusted_degs = Math.toDegrees(rad - (3 * Math.PI)/2 + (4 * Math.PI)) % 360;
 		DecimalFormat formatted_num = new DecimalFormat("#.##");
 		m_direction_label.setText("Direction: " + formatted_num.format(adjusted_degs) + "°");
@@ -161,12 +151,15 @@ public class HoldSelectionSettings extends JPanel {
 	public void setHoldSize(
 			Vector2 size, 
 			Hold old_hold) {
-		m_size = size;
-		Vector2 centre = old_hold.getCentrePoint();
-		
-		m_new_pos = new Vector2(centre.x - m_size.x/2.0, centre.y - m_size.y/2.0);
+		m_new_hold.setSize(size);
 		DecimalFormat formatted_num = new DecimalFormat("#.##");
-		m_size_label.setText("Size: (" + formatted_num.format(m_size.x) + ", " + formatted_num.format(m_size.y) + ")");
+		m_size_label.setText("Size: (" +
+				formatted_num.format(m_new_hold.size().x) + ", " +
+				formatted_num.format(m_new_hold.size().y) + ")");
+	}
+
+	public void setPosition(Vector2 pos) {
+		m_new_hold.setPosition(pos);
 	}
 	
 	public void disableAll() {
