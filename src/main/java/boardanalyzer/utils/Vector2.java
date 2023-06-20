@@ -1,12 +1,14 @@
 package boardanalyzer.utils;
 
 import java.awt.geom.Point2D;
+import java.io.Serial;
 import java.io.Serializable;
 
 import org.kynosarges.tektosyne.geometry.PointD;
 
 public class Vector2 implements Serializable {
-	private static final long serialVersionUID = 1L;
+	@Serial
+    private static final long serialVersionUID = 1L;
 	public double x;
 	public double y;
 	
@@ -165,10 +167,8 @@ public class Vector2 implements Serializable {
     
     public static boolean onSegment(Vector2 p, Vector2 q, Vector2 r)
     {
-        if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x)
-                && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
-            return true;
-        return false;
+        return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x)
+                && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
     }
     
     public static int orientation(Vector2 p, Vector2 q, Vector2 r)

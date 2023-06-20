@@ -26,11 +26,7 @@ public class MainWindow {
 			out = new FileOutputStream("appProperties");
 			applicationProps.store(out, "---No Comment---");
 			out.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
@@ -66,7 +62,6 @@ public class MainWindow {
 			in.close();
 		} catch (FileNotFoundException e) {
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -79,7 +74,6 @@ public class MainWindow {
 			in.close();
 		} catch (FileNotFoundException e) {
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     	
@@ -91,7 +85,6 @@ public class MainWindow {
         try {
 			m_frame.setIconImage(ImageIO.read(ClassLoader.getSystemResource("images/icon.png")));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         
@@ -128,8 +121,7 @@ public class MainWindow {
         				suggest_type_button, suggest_direction_button);
         HoldGenerationSettings hold_generation_settings = new HoldGenerationSettings();
         m_board = new BoardFrame(
-        		m_frame, 
-        		hold_selection_settings, 
+        		hold_selection_settings,
         		board_settings_panel,
         		heatmap_settings_panel,
         		hold_generation_settings, 

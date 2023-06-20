@@ -1,8 +1,10 @@
 package boardanalyzer;
 
+import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.BoardSave;
 import boardanalyzer.board_logic.Hold;
-import boardanalyzer.board_logic.analysis.Analyzer;
+import boardanalyzer.board_logic.analysis.HeatmapGenerator;
+import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
 import boardanalyzer.ui.basic_elements.BoardFileFilter;
 import boardanalyzer.ui.basic_elements.ImageFileFilter;
@@ -15,10 +17,7 @@ import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Optional;
+import java.util.*;
 
 import javax.swing.event.*;
 
@@ -31,14 +30,15 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		BOARD_STATS_UP,
 		THINKING
 	}
-	static public String BOARD_EXTENSION = new String(".board");
-	private String DEFAULT_BOARD_NAME = new String("name");
+	static public String BOARD_EXTENSION = ".board";
+	private String DEFAULT_BOARD_NAME = "name";
+	@Serial
 	private static final long serialVersionUID = 1L;
 	private static final Font DEFAULT_FONT = new Font("Times New Roman",
             Font.BOLD,
             50);
 	private AppState m_state;
-	private JFileChooser m_file_chooser;
+	private final JFileChooser m_file_chooser;
 	
 	private BoardSave m_board_save;
 	private File m_current_loaded_board_file;
@@ -48,15 +48,14 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private boolean m_dragging_width;
 	
 	private Hold m_selected_hold;
-	private HoldSelectionSettings m_hold_selection_settings;
-	private HoldGenerationSettings m_hold_generation_settings;
-	private BoardSettings m_board_settings;
-	private HeatmapSettings m_heatmap_settings;
-	private BoardStatistics m_board_statistics;
+	private final HoldSelectionSettings m_hold_selection_settings;
+	private final HoldGenerationSettings m_hold_generation_settings;
+	private final BoardSettings m_board_settings;
+	private final HeatmapSettings m_heatmap_settings;
+	private final BoardStatistics m_board_statistics;
 		
 	public BoardFrame(
-			JFrame fram, 
-			HoldSelectionSettings hss, 
+			HoldSelectionSettings hss,
 			BoardSettings bs,
 			HeatmapSettings hs,
 			HoldGenerationSettings hgs,
@@ -79,7 +78,6 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				m_board_save = new BoardSave();
 			}
 		} catch (ClassNotFoundException | IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -154,44 +152,42 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		
 			// Draw holds
 			ArrayList<Hold> holds = m_board_save.m_board.getHolds();
-			if (!holds.isEmpty()) {		
-				for (Iterator<Hold> it = holds.iterator(); it.hasNext();) {
-					Hold h = it.next();
-					
+			if (!holds.isEmpty()) {
+				for (Hold h : holds) {
 					Color c = getColorFromHold(h);
 					g2.setColor(c);
 					Vector2 circle_size = h.size();
 					double direction = h.direction();
-					int circle_pos_x = (int)h.position().x;
-					int circle_pos_y = (int)h.position().y;
+					int circle_pos_x = (int) h.position().x;
+					int circle_pos_y = (int) h.position().y;
 					int lineWidth = 5;
 
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
 						circle_size = m_hold_selection_settings.getHoldSize();
 						direction = m_hold_selection_settings.getDirection();
-						circle_pos_x = (int)m_hold_selection_settings.getHoldPosition().x;
-						circle_pos_y = (int)m_hold_selection_settings.getHoldPosition().y;
+						circle_pos_x = (int) m_hold_selection_settings.getHoldPosition().x;
+						circle_pos_y = (int) m_hold_selection_settings.getHoldPosition().y;
 						// Make line width thicker for circle
 						lineWidth = 7;
 					}
-					
+
 					Vector2 circle_centre = h.getCentrePoint();
-					Vector2 point_on_circle_towards_mouse = 
+					Vector2 point_on_circle_towards_mouse =
 							getPointOnCircleFromRad(
 									direction,
 									circle_centre,
 									circle_size
-									);
-					
+							);
+
 					g2.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
-	
+
 					g2.drawLine(
-							(int)point_on_circle_towards_mouse.x, 
-							(int)point_on_circle_towards_mouse.y, 
-							(int)circle_centre.x, 
-							(int)circle_centre.y
-							);					
-					Shape circle = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);											
+							(int) point_on_circle_towards_mouse.x,
+							(int) point_on_circle_towards_mouse.y,
+							(int) circle_centre.x,
+							(int) circle_centre.y
+					);
+					Shape circle = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
 					g2.draw(circle);
 				}
 			}
@@ -245,32 +241,32 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand() == "NewBoard") {
+		if (Objects.equals(e.getActionCommand(), "NewBoard")) {
 			newBoard();
-		} else if (e.getActionCommand() == "OpenBoard") {
+		} else if (Objects.equals(e.getActionCommand(), "OpenBoard")) {
 			openBoard();
-		} else if (e.getActionCommand() == "Save") {
+		} else if (Objects.equals(e.getActionCommand(), "Save")) {
 			saveSettings();
 			saveBoard(m_current_loaded_board_file);
-		} else if (e.getActionCommand() == "SaveHold") {
+		} else if (Objects.equals(e.getActionCommand(), "SaveHold")) {
 			saveSelectedHold();
-		} else if (e.getActionCommand() == "DeleteHold") {
+		} else if (Objects.equals(e.getActionCommand(), "DeleteHold")) {
 			deleteSelectedHold();
-		} else if (e.getActionCommand() == "GenerateHeatmap") {
+		} else if (Objects.equals(e.getActionCommand(), "GenerateHeatmap")) {
 			generateHeatmap();
-		} else if (e.getActionCommand() == "SetCorners") {
+		} else if (Objects.equals(e.getActionCommand(), "SetCorners")) {
 			m_board_save.m_board.clearCorners();
 			setCornerSetState();
-		} else if (e.getActionCommand() == "GenerateHold") {
+		} else if (Objects.equals(e.getActionCommand(), "GenerateHold")) {
 			generateHold();
 			//// Something
-		} else if (e.getActionCommand() == "ShowHoldStats") {
+		} else if (Objects.equals(e.getActionCommand(), "ShowHoldStats")) {
 			showHoldStats();
-		} else if (e.getActionCommand() == "ClearAllHolds") {
+		} else if (Objects.equals(e.getActionCommand(), "ClearAllHolds")) {
 			clearAllHolds();
-		} else if (e.getActionCommand() == "SuggestHoldType") {
+		} else if (Objects.equals(e.getActionCommand(), "SuggestHoldType")) {
 			suggestHoldType();
-		} else if (e.getActionCommand() == "SuggestHoldDirection") {
+		} else if (Objects.equals(e.getActionCommand(), "SuggestHoldDirection")) {
 			suggestHoldDirection();
 		}
 		repaint();
@@ -278,23 +274,24 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	
 	private void suggestHoldType() {
 		if (m_selected_hold != null) {
-			Analyzer a = new Analyzer(
+			HoldSuggestionGenerator generator = new HoldSuggestionGenerator(
 					m_board_save.m_board, 
 					m_board_save.m_board_dimensions,
 					m_board_save.m_hold_type_ratio, 
 					m_board_save.m_hold_direction_ratio);
-			Hold.Type new_type = a.suggestHoldTypes(m_selected_hold);
+			Hold.Type new_type = generator.suggestHoldType(m_selected_hold);
 			m_hold_selection_settings.setToHoldType(new_type);
 		}
 	}
 	
 	private void suggestHoldDirection() {
 		if (m_selected_hold != null) {
-			Analyzer a = new Analyzer(m_board_save.m_board, 
+			HoldSuggestionGenerator generator = new HoldSuggestionGenerator(
+					m_board_save.m_board,
 					m_board_save.m_board_dimensions,
 					m_board_save.m_hold_type_ratio, 
 					m_board_save.m_hold_direction_ratio);
-			double new_dir = a.suggestHoldDirection(m_selected_hold);
+			double new_dir = generator.suggestHoldDirection(m_selected_hold);
 			m_hold_selection_settings.setDirection(new_dir);
 		}
 	}
@@ -323,7 +320,6 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			try {
 				openSavedBoard(chosen_file);
 			} catch (ClassNotFoundException | IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -373,11 +369,12 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 		if (m_selected_hold != null) {
 			saveSelectedHold();
 		}
-		Analyzer a = new Analyzer(m_board_save.m_board, 
+		HoldSuggestionGenerator generator = new HoldSuggestionGenerator(
+				m_board_save.m_board,
 				m_board_save.m_board_dimensions,
 				m_board_save.m_hold_type_ratio, 
 				m_board_save.m_hold_direction_ratio);
-		Optional<Hold> new_hold = a.generateHold(m_hold_generation_settings);
+		Optional<Hold> new_hold = generator.generateHold(m_hold_generation_settings);
 		if (new_hold.isPresent()) {
 			m_board_save.m_board.addHold(new_hold.get());
 			selectHold(new_hold.get());
@@ -398,20 +395,15 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			o.flush();
 			o.close();
 			MainWindow.setInstructionText("Board saved to file " + file.getAbsolutePath());
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
 	
 	private void generateHeatmap() {
-		Analyzer a = new Analyzer(m_board_save.m_board, 
-				m_board_save.m_board_dimensions,
-				m_board_save.m_hold_type_ratio, 
-				m_board_save.m_hold_direction_ratio);
+		HeatmapGenerator generator = new HeatmapGenerator(
+				m_board_save.m_board,
+				m_board_save.m_board_dimensions);
 		File output_file = new File("heatmap.png");
 		HashSet<Hold.Type> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
 		if (holdtypes.isEmpty()) {
@@ -423,7 +415,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			holdtypes.add(Hold.Type.SLOPER);
 		}
 		MainWindow.setInstructionText("Generating heatmap..");
-		BufferedImage image = a.getHeatmap(
+		BufferedImage image = generator.generateHeatmap(
 				m_heatmap_settings.getBrightness(),
 				holdtypes, 
 				m_heatmap_settings.holdTypesShouldExactlyMatch(),
@@ -456,7 +448,6 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			try {
 				openImageFile(chosen_file);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
         }
@@ -469,9 +460,9 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			int result = JOptionPane.showConfirmDialog(null, "Board data already exists, Would you like to clear it?");
 			if (result == JOptionPane.YES_OPTION) {
 				// Clear board data
+				m_board_save = new BoardSave();
 			} else if (result == JOptionPane.NO_OPTION) {
-				///// TODO
-				// Do something clever
+				///// TODO remap the old hold positions and corners to the new image size
 			} else {
 				// Do nothing
 				return;
@@ -599,7 +590,6 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         		try {
 					selectHold(m_board_save.m_board.getHold(x, y));
 				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
 					System.out.println("Can't find hold! Logic mismatch in existshold and gethold");
 					e.printStackTrace();
 				}
@@ -699,7 +689,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 //    			Vector2 circle_centre = m_selected_hold.getCentrePoint();
 //    			m_selected_hold
 //    			m_selected_hold.direction();
-				//// TODO Ssssometthing
+				//// TODO make ellipse creation work, a lot of underlying functions in analysis will require changing too
     			repaint();
     		}
         }
@@ -712,14 +702,10 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
