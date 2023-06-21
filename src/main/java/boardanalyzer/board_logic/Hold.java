@@ -50,14 +50,14 @@ public class Hold implements Serializable{
 		RIGHT_SIDEPULL("Right sidepull"),
 		LEFT_SIDEPULL("Left sidepull"),
 		UNDERCUT("Undercut");
-		private String name;
+		private final String name;
 		private Direction(String s) {
 			this.name = s;
 		}
-		private static double MARGIN = Math.PI / 32.0;
-		private static double UP_ANGLE = -Math.PI/2;
-		private static double LEFT_ANGLE = Math.PI;
-		private static double RIGHT_ANGLE = 0;
+		private static final double MARGIN = Math.PI / 32.0;
+		private static final double UP_ANGLE = -Math.PI/2;
+		private static final double LEFT_ANGLE = Math.PI;
+		private static final double RIGHT_ANGLE = 0;
 		static public Direction classifyAngle(double angle) {
 			if (UP_ANGLE - MARGIN < angle && angle < UP_ANGLE + MARGIN) {
 				return Hold.Direction.UP;

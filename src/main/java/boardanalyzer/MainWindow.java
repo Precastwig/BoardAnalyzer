@@ -15,7 +15,7 @@ public class MainWindow {
 
     static JFrame m_frame;
     static InstructionPanel m_instruction_panel;
-    static BoardFrame m_board;
+    static BoardPanel m_board;
     static int PREFERRED_GENERATE_TAB_WIDTH = 200;
     static int PREFERRED_BOTTOM_BAR_HEIGHT = 50;
     static Properties applicationProps;
@@ -104,8 +104,10 @@ public class MainWindow {
 		new_board_button.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
 		new_board_button.setMinimumSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
 		new_board_button.setSize(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20);
-        JButton set_board_corners_button = new JButton("Set board corners");
-        JButton save_settings_button = new JButton("Save");
+		JButton set_lowest_hold_button = new JButton("Set lowest allowed hand-hold height");
+		set_lowest_hold_button.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
+		JButton set_board_corners_button = new JButton("Set board corners");
+		JButton save_settings_button = new JButton("Save");
         // Tabbed Panels
         BoardStatistics board_stats = new BoardStatistics(show_hold_stats);
         HeatmapSettings heatmap_settings_panel = new HeatmapSettings();
@@ -115,12 +117,13 @@ public class MainWindow {
         		save_settings_button, 
         		set_board_corners_button, 
         		clear_all_holds_button, 
-        		open_board_button);
+        		open_board_button,
+				set_lowest_hold_button);
         HoldSelectionSettings hold_selection_settings =
         		new HoldSelectionSettings(save_hold_button, delete_hold_button,
         				suggest_type_button, suggest_direction_button);
         HoldGenerationSettings hold_generation_settings = new HoldGenerationSettings();
-        m_board = new BoardFrame(
+        m_board = new BoardPanel(
         		hold_selection_settings,
         		board_settings_panel,
         		heatmap_settings_panel,
@@ -148,6 +151,8 @@ public class MainWindow {
 		clear_all_holds_button.addActionListener(m_board);
 		set_board_corners_button.setActionCommand("SetCorners");
 		set_board_corners_button.addActionListener(m_board);
+		set_lowest_hold_button.setActionCommand("SetLowestHandHoldHeight");
+		set_lowest_hold_button.addActionListener(m_board);
 		save_settings_button.setActionCommand("Save");
         save_settings_button.addActionListener(m_board);
 		

@@ -12,5 +12,8 @@ Java is one of the easiest languages with the best inherent GUI design, so java 
 ### To do
 - Force every hold to have a type
 - Change hold direction/type suggestions based upon location (less sidepulls near the edge, only feet at the bottom)
+- Show errors/warnings in red on info pane, like when saving a hold that's invalid
 - Show progress bar during long generations/Put them on a seperate thread
-- Auto hold discovery (grumble?)
+- Add ability to zoom in on board image (difficult? I think)
+- Allow dragging hold into ellipses, and fix underlying analysis to work with ellipses (tricksy, lots of math involved)
+- Auto hold discovery (I will probably never do this)

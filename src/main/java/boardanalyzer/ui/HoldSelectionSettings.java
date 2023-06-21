@@ -163,8 +163,7 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public void disableAll() {
-		for (Iterator<JCheckBox> it = m_hold_type_checkboxes.iterator(); it.hasNext();) {
-			JCheckBox cb = it.next();
+		for (JCheckBox cb : m_hold_type_checkboxes) {
 			cb.setEnabled(false);
 		}
 		m_save_hold_button.setEnabled(false);
@@ -176,8 +175,7 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public void enableAll() {
-		for (Iterator<JCheckBox> it = m_hold_type_checkboxes.iterator(); it.hasNext();) {
-			JCheckBox cb = it.next();
+		for (JCheckBox cb : m_hold_type_checkboxes) {
 			cb.setEnabled(true);
 		}
 		m_delete_hold_button.setEnabled(true);

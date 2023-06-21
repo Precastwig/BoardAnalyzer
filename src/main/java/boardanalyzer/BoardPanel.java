@@ -1,6 +1,5 @@
 package boardanalyzer;
 
-import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.BoardSave;
 import boardanalyzer.board_logic.Hold;
 import boardanalyzer.board_logic.analysis.HeatmapGenerator;
@@ -21,17 +20,18 @@ import java.util.*;
 
 import javax.swing.event.*;
 
-public class BoardFrame extends JPanel implements ActionListener, ChangeListener, KeyListener {
+public class BoardPanel extends JPanel implements ActionListener, ChangeListener, KeyListener {
 	private enum AppState {
 		LOAD_IMAGE,
 		CORNER_SET,
+		LOWEST_HAND_HOLD_SET,
 		WAITING,
 		HOLD_SELECTED,
 		BOARD_STATS_UP,
 		THINKING
 	}
 	static public String BOARD_EXTENSION = ".board";
-	private String DEFAULT_BOARD_NAME = "name";
+	private String DEFAULT_BOARD_NAME = "default";
 	@Serial
 	private static final long serialVersionUID = 1L;
 	private static final Font DEFAULT_FONT = new Font("Times New Roman",
@@ -56,7 +56,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	private final HeatmapSettings m_heatmap_settings;
 	private final BoardStatistics m_board_statistics;
 		
-	public BoardFrame(
+	public BoardPanel(
 			HoldSelectionSettings hss,
 			BoardSettings bs,
 			HeatmapSettings hs,
@@ -258,6 +258,16 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				}
 			}
 		}
+
+		if (m_state == AppState.LOWEST_HAND_HOLD_SET) {
+			// Show previous lowest
+			int lowest_y = (int)m_board_save.m_board.getLowestAllowedHandHoldHeight();
+			g2.setColor(new Color(64,201,92));
+			g2.drawLine(0, lowest_y, (int)m_board_save.m_board.getBoardWidth(), lowest_y);
+			// Show where mouse is
+			g2.setColor(new Color(15,255,63));
+			g2.drawLine(0, m_mouse_y,(int)m_board_save.m_board.getBoardWidth(), m_mouse_y );
+		}
 		
 		if (m_state == AppState.BOARD_STATS_UP) {
 		    super.paintComponents(g);
@@ -303,9 +313,15 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			suggestHoldType();
 		} else if (Objects.equals(e.getActionCommand(), "SuggestHoldDirection")) {
 			suggestHoldDirection();
+		} else if (Objects.equals(e.getActionCommand(), "SetLowestHandHoldHeight")) {
+			setLowestHandHoldHeight();
 		}
 		m_board_statistics.updateLabels(m_board_save.m_board); // Inefficient, but covers our bases
 		repaint();
+	}
+
+	private void setLowestHandHoldHeight() {
+		m_state = AppState.LOWEST_HAND_HOLD_SET;
 	}
 	
 	private void suggestHoldType() {
@@ -372,7 +388,10 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 				return;
 			}
 		}
-		String input = JOptionPane.showInputDialog(null, "Enter board name");
+		String input = JOptionPane.showInputDialog(null, "Enter board name (leave blank for default)");
+		if (input.length() == 0){
+			input = DEFAULT_BOARD_NAME;
+		}
 		m_current_loaded_board_file = new File(input + BOARD_EXTENSION);
 		if (m_current_loaded_board_file.exists()) {
 			int choice = JOptionPane.showConfirmDialog(
@@ -601,7 +620,7 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 
-		if (!m_board_save.m_board.isInsideBorders(m_hold_selection_settings.getHoldPosition())) {
+		if (m_board_save.m_board.isOutsideBorders(m_hold_selection_settings.getHoldPosition())) {
 			selectHold(m_selected_hold);
 			MainWindow.setInstructionText("Error! Cannot place hold outside of border");
 			return;
@@ -650,35 +669,46 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
 	}
 		
 	private void tryClick(int x, int y) {
-       	//System.out.println("Clicked x:" + x + " y: " + y);
-       	if (m_state == AppState.WAITING) {
-        	if (m_board_save.m_board.existsHold(x, y)) {
-        		try {
-					saveSelectedHold();
-					selectHold(m_board_save.m_board.getHold(x, y));
-				} catch (IllegalAccessException e) {
-					System.out.println("Can't find hold! Logic mismatch in existshold and gethold");
-					e.printStackTrace();
+		switch (m_state) {
+			case WAITING -> {
+				if (m_board_save.m_board.existsHold(x, y)) {
+					try {
+						saveSelectedHold();
+						selectHold(m_board_save.m_board.getHold(x, y));
+					} catch (IllegalAccessException e) {
+						System.out.println("Can't find hold! Logic mismatch in existshold and gethold");
+						e.printStackTrace();
+					}
+				} else {
+					// No hold where we clicked
+					Optional<Hold> hold_maybe = m_board_save.m_board.createHold(new Vector2(x, y));
+					if (hold_maybe.isPresent()) {
+						selectHold(hold_maybe.get());
+					} else {
+						MainWindow.setInstructionText("Selection is outside of board limits");
+					}
 				}
-        	} else {        			
-	        	// No hold where we clicked
-        		Optional<Hold> hold_maybe = m_board_save.m_board.createHold(new Vector2(x, y));
-        		if (hold_maybe.isPresent()) {
-        			selectHold(hold_maybe.get());
-        		} else {
-        			MainWindow.setInstructionText("Selection is outside of board limits");
-        		}
-        	}
-        } else if (m_state == AppState.CORNER_SET) {
-        	m_board_save.m_board.addCorner(new Vector2(x, y));
-        	if (m_board_save.m_board.areAllCornersSet()) {
-        		setWaitingState();
-        	}
-        }
+			}
+			case CORNER_SET -> {
+				m_board_save.m_board.addCorner(new Vector2(x, y));
+				if (m_board_save.m_board.areAllCornersSet()) {
+					setWaitingState();
+				}
+			}
+			case LOWEST_HAND_HOLD_SET -> {
+				m_board_save.m_board.setLowestAllowedHandHoldHeight(y);
+				setWaitingState();
+			}
+		}
         // If something changes, we should do this: 
         repaint();
     }
-	
+
+	private void setLowestHandHoldState() {
+		m_state = AppState.LOWEST_HAND_HOLD_SET;
+		MainWindow.setInstructionText("Set the lowest position on the board that is acceptable for a hand hold");
+	}
+
 	private void setCornerSetState() {
 		m_state = AppState.CORNER_SET;
 		MainWindow.setInstructionText("The corners of the board need to be located, click on the corners in clockwise order.");
@@ -775,8 +805,11 @@ public class BoardFrame extends JPanel implements ActionListener, ChangeListener
         @Override
         public void mouseMoved(MouseEvent e) {
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
-//			m_mouse_x = e.getX();
-//			m_mouse_y = e.getY();
+			if (m_state == AppState.LOWEST_HAND_HOLD_SET) {
+				m_mouse_x = e.getX();
+				m_mouse_y = e.getY();
+				repaint();
+			}
         }
     }
 

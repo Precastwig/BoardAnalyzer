@@ -1,6 +1,6 @@
 package boardanalyzer.ui.basic_elements;
 
-import boardanalyzer.BoardFrame;
+import boardanalyzer.BoardPanel;
 
 import java.io.File;
 
@@ -12,7 +12,7 @@ public class BoardFileFilter extends FileFilter {
 	public boolean accept(File f) {
 		if (f.exists()) {
 			String s = f.getName();
-			return s.contains(BoardFrame.BOARD_EXTENSION);
+			return s.contains(BoardPanel.BOARD_EXTENSION);
 		}
 		return false;
 	}

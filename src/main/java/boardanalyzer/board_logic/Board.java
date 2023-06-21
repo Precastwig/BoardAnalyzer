@@ -8,7 +8,6 @@ import java.io.Serializable;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Optional;
 
 public class Board implements Serializable {
@@ -21,11 +20,38 @@ public class Board implements Serializable {
 	// This is probably not a good idea
 	private ArrayList<Vector2> m_board_corners;
 	private Vector2 m_board_size;
+	protected double m_hand_hold_lowest_y_val;
 	
 	public Board() {
 		m_holds = new ArrayList<Hold>();
 		m_board_corners = new ArrayList<Vector2>();
 		m_board_size = new Vector2();
+		m_hand_hold_lowest_y_val = 0;
+	}
+
+	public double getLowestAllowedHandHoldHeightNoDefault() {
+		return m_hand_hold_lowest_y_val;
+	}
+
+	public double getLowestAllowedHandHoldHeight() {
+		if (m_hand_hold_lowest_y_val != 0) {
+			return m_hand_hold_lowest_y_val;
+		}
+		double lowest_hold_y = 0;
+		/// Find the "lowest hand hold" if we haven't set a value
+		for (Hold h : m_holds) {
+			if (!h.isFoot()) {
+				if (h.position().y > lowest_hold_y) {
+					lowest_hold_y = h.position().y;
+				}
+			}
+		}
+		// Anything lower than that (or default value of 20% of the board height) is a foot
+		return Math.max(lowest_hold_y, m_board_size.y * 0.8);
+	}
+
+	public void setLowestAllowedHandHoldHeight(double y) {
+		m_hand_hold_lowest_y_val = y;
 	}
 	
 	public void clearCorners() {
@@ -142,9 +168,9 @@ public class Board implements Serializable {
 		return ret_h;
 	}
 	
-	public boolean isInsideBorders(Vector2 p) {
+	public boolean isOutsideBorders(Vector2 p) {
 		if (!areAllCornersSet()) {
-			return false;
+			return true;
 		}
 		
 		int some_big_number = 1000000;
@@ -155,17 +181,17 @@ public class Board implements Serializable {
             int next = (i + 1) % 4;
             if (Vector2.intersectFiniteLines(m_board_corners.get(i), m_board_corners.get(next), p, extreme)) {
                 if (Vector2.orientation(m_board_corners.get(i), p, m_board_corners.get(next)) == 0)
-                    return Vector2.onSegment(m_board_corners.get(i), p, m_board_corners.get(next));
+                    return !Vector2.onSegment(m_board_corners.get(i), p, m_board_corners.get(next));
                 count++;
             }
             i = next;
         } while (i != 0);
 
-        return (count & 1) == 1;
+        return (count & 1) != 1;
 	}
 	
 	public Optional<Hold> createHold(Vector2 pos) {
-		if (!isInsideBorders(pos)) {
+		if (isOutsideBorders(pos)) {
 			return Optional.empty();
 		}
 		Hold new_hold = new Hold();

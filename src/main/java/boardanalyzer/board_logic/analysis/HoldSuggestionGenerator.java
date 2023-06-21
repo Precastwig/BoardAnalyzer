@@ -96,7 +96,7 @@ public class HoldSuggestionGenerator extends Analyzer {
             Vector2 loc,
             double min_distance,
             FlatBoard b) {
-        if (!b.isInsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y) ||
+        if (b.isOutsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y) ||
             loc.x < min_distance || loc.y < min_distance ||
                 b.getBoardWidth() - loc.x < min_distance ||
                 b.getBoardHeight() - loc.y < min_distance) {
@@ -111,13 +111,30 @@ public class HoldSuggestionGenerator extends Analyzer {
     public Hold.Type suggestHoldType(Hold h) {
         FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
         flat_board.removeHoldAt(h.position());
-        return getLeastFilledHoldType(flat_board, h.getCentrePoint(), Hold.Type.getHandTypes());
+        return suggestNewHoldType(flat_board, h.getCentrePoint());
     }
 
     public double suggestHoldDirection(Hold h) {
         FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
         flat_board.removeHoldAt(h.position());
         return suggestHoldDirectionImpl(flat_board, h.getCentrePoint(), h.size());
+    }
+
+    private ArrayList<Hold.Direction> getRelevantHoldDirectionsFromPosition(FlatBoard b, Vector2 position) {
+        // If we are far left we don't want to generate right sidepulls or underclings
+        // and vice versa
+        double margin_size = 0.1;
+        ArrayList<Hold.Direction> relevant_directions = new ArrayList<Hold.Direction>(Arrays.asList(Hold.Direction.values()));
+        if (position.x < b.getBoardWidth() * margin_size) {
+            relevant_directions.remove(Hold.Direction.RIGHT_SIDEPULL);
+            relevant_directions.remove(Hold.Direction.UNDERCUT);
+        }
+        if (b.getBoardWidth() * (1-margin_size) < position.x) {
+            relevant_directions.remove(Hold.Direction.LEFT_SIDEPULL);
+            relevant_directions.remove(Hold.Direction.UNDERCUT);
+        }
+
+        return relevant_directions;
     }
 
     private double suggestHoldDirectionImpl(FlatBoard b, Vector2 position, Vector2 size) {
@@ -131,17 +148,32 @@ public class HoldSuggestionGenerator extends Analyzer {
         if (holds_in_proximity.isEmpty()) {
             // Generate a direction based upon the preference distribution
             ArrayList<Hold.Direction> choices = new ArrayList<Hold.Direction>();
-            for (Hold.Direction dir : Hold.Direction.values()) {
+            // Build up an array list that contains hold directions for each number in the preference ratio
+            // e.g. m_hold_direction_pref_ratio = [4, 0, 0, 0, 0, 1]
+            // choices = [UP, UP, UP, UP, UNDERCUT]
+            for (Hold.Direction dir : getRelevantHoldDirectionsFromPosition(b, position)) {
                 Hold.Direction[] temp = new Hold.Direction[m_hold_direction_pref_ratio[dir.ordinal()]];
                 Arrays.fill(temp, dir);
                 Collections.addAll(choices, temp);
             }
+            // Then pick one randomly
             Random r = new Random();
             Hold.Direction new_dir = choices.get(r.nextInt(choices.size()));
             return Hold.Direction.getRandomAngle(new_dir);
         }
         Hold.Direction dir = getLeastFilledHoldDirection(b, position);
         return Hold.Direction.getRandomAngle(dir);
+    }
+
+    private Hold.Type suggestNewHoldType(FlatBoard b, Vector2 position) {
+        double lowest_hold_y = b.getLowestAllowedHandHoldHeight();
+
+        if (lowest_hold_y < position.y) {
+            // Bottom of the board
+            return Hold.Type.FOOT;
+        }
+
+        return getLeastFilledHoldType(b, position, Hold.Type.getHandTypes());
     }
 
     private double suggestNewHoldSize(FlatBoard b, Vector2 position) throws InvalidAlgorithmParameterException {
@@ -161,7 +193,7 @@ public class HoldSuggestionGenerator extends Analyzer {
         return m_hold_size_min + (Math.random() * (max_size - m_hold_size_min));
     }
 
-    private Hold.Type getLeastFilledHoldType(FlatBoard b, Vector2 position, Hold.Type[] types) {
+    private Hold.Type getLeastFilledHoldType(FlatBoard b,  Vector2 position, Hold.Type[] types) {
         Hold.Type least_filled_type = types[0];
         double hold_vicinity_distance = getProximityDistance(b);
         double smallest_proportion = Double.POSITIVE_INFINITY;

@@ -17,7 +17,6 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 public class BoardSettings extends JPanel {
-		
 	private TextField m_width_textfield;
 	private TextField m_height_textfield;
 	private PercentageChooser<Hold.Type> m_hold_type_bars;
@@ -25,8 +24,8 @@ public class BoardSettings extends JPanel {
 	private MinMaxSizePanel m_hold_size;
 	
 	static class MinMaxSizePanel extends JPanel {
-		private TextField m_min_textfield;
-		private TextField m_max_textfield;
+		private final TextField m_min_textfield;
+		private final TextField m_max_textfield;
 		public MinMaxSizePanel() {
 			setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 			JPanel min_input = new JPanel();
@@ -78,7 +77,8 @@ public class BoardSettings extends JPanel {
 			JButton save_settings_button, 
 			JButton set_board_corners_button, 
 			JButton clear_holds_button,
-			JButton open_board_button) {
+			JButton open_board_button,
+			JButton set_lowest_hold_height_button) {
 		setLayout(new BorderLayout());
 		JPanel inner_panel = new JPanel();
 		inner_panel.setLayout(new BoxLayout(inner_panel, BoxLayout.PAGE_AXIS));
@@ -95,6 +95,7 @@ public class BoardSettings extends JPanel {
         save_settings_button.setAlignmentX(0.5f);
         set_board_corners_button.setAlignmentX(0.5f);
         clear_holds_button.setAlignmentX(0.5f);
+		set_lowest_hold_height_button.setAlignmentX(0.5f);
         
 		JPanel width_input = new JPanel();
         JLabel width_label = new JLabel("Width");
@@ -129,6 +130,7 @@ public class BoardSettings extends JPanel {
         inner_panel.add(open_board_button);
         inner_panel.add(Box.createRigidArea(new Dimension(0, 20)));
         inner_panel.add(set_board_corners_button);
+		inner_panel.add(set_lowest_hold_height_button);
         inner_panel.add(clear_holds_button);
 //        inner_panel.add(Box.createRigidArea(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 40)));
         inner_panel.add(width_input);
