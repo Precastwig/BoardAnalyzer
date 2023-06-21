@@ -5,8 +5,6 @@ import boardanalyzer.board_logic.Hold;
 import boardanalyzer.board_logic.analysis.HeatmapGenerator;
 import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
-import boardanalyzer.ui.basic_elements.BoardFileFilter;
-import boardanalyzer.ui.basic_elements.ImageFileFilter;
 import boardanalyzer.utils.Vector2;
 
 import javax.imageio.ImageIO;
