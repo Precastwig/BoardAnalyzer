@@ -369,7 +369,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				return;
 			}
 		}
-		m_file_chooser.setFileFilter(new FileNameExtensionFilter("Board saves", BoardFrame.BOARD_EXTENSION));
+		m_file_chooser.setFileFilter(new FileNameExtensionFilter("Board saves", BoardPanel.BOARD_EXTENSION));
 		int returnVal = m_file_chooser.showDialog(this, "Open Board Save");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File chosen_file = m_file_chooser.getSelectedFile();
