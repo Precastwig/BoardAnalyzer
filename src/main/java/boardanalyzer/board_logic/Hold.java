@@ -146,7 +146,7 @@ public class Hold implements Serializable{
 	public Hold() {
 		m_pos = new Vector2(0,0);
 		m_size = new Vector2(0,0);
-		m_direction_rad = 0;
+		m_direction_rad = Direction.UP_ANGLE;
 		m_types = new HashSet<Type>();
 	}
 	

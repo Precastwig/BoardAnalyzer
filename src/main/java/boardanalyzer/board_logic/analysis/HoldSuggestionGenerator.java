@@ -7,6 +7,7 @@ import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 import org.kynosarges.tektosyne.geometry.*;
 
+import java.lang.reflect.Array;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 
@@ -41,28 +42,22 @@ public class HoldSuggestionGenerator extends Analyzer {
         return new_locs.get(index);
     }
 
-    private ArrayList<Vector2> getAllPotentialNewHoldLocations(
-            FlatBoard b
-    ) {
-        ArrayList<Vector2> return_list = new ArrayList<Vector2>();
-        ArrayList<Hold> holds = b.getHolds();
+    private Vector2 getRandomValidPosition(FlatBoard b) {
+        Vector2 pos = new Vector2(0,0);
+        do {
+            int EDGE_DISTANCE = (int) (Math.min(b.getBoardWidth(), b.getBoardHeight())*0.05);
+            Random r = new Random();
+            pos.x = r.nextInt((int) b.getBoardWidth() - 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
+            pos.y = r.nextInt((int) b.getBoardHeight()- 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
+        } while (checkLocationValid(pos, m_hold_size_min, b));
+        return pos;
+    }
 
-        if (holds.size() < 3) {
-            // Pick randomly
-            int ran_x;
-            int ran_y;
-            do {
-                int EDGE_DISTANCE = (int) (Math.min(b.getBoardWidth(), b.getBoardHeight())*0.05);
-                Random r = new Random();
-                ran_x = r.nextInt((int) b.getBoardWidth() - 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
-                ran_y = r.nextInt((int) b.getBoardHeight()- 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
-            } while (b.existsHold(ran_x, ran_y));
-            return_list.add(new Vector2(ran_x, ran_y));
-            return return_list;
-        }
+    private ArrayList<Vector2> getValidVoronoiNewLocations(FlatBoard b) {
+        ArrayList<Vector2> return_list = new ArrayList<Vector2>();
 
         // Use Voronoi to generate potential positions
-        PointD[] hold_positions = getPointArrayFromHolds(holds);
+        PointD[] hold_positions = getPointArrayFromHolds(b.getHolds());
         RectD clipping_rect = new RectD(0.0, 0.0, b.getBoardWidth(), b.getBoardHeight());
         VoronoiResults v = Voronoi.findAll(hold_positions, clipping_rect);
         PointD[] points = v.voronoiVertices;
@@ -92,6 +87,35 @@ public class HoldSuggestionGenerator extends Analyzer {
         return return_list;
     }
 
+    private ArrayList<Vector2> getAllPotentialNewHoldLocations(
+            FlatBoard b
+    ) {
+        ArrayList<Vector2> return_list = new ArrayList<Vector2>();
+        ArrayList<Hold> holds = b.getHolds();
+
+        if (holds.size() < 3) {
+            // Pick randomly
+            return_list.add(getRandomValidPosition(b));
+            return return_list;
+        }
+
+        ArrayList<Vector2> potential_locations = getValidVoronoiNewLocations(b);
+
+        // Cull the 50% of points that are closest to their nearest hold
+        double total_distance = 0;
+        for (Vector2 p : potential_locations) {
+            total_distance += b.getDistanceToNearestHold(p);
+        }
+        double average = total_distance / potential_locations.size();
+        for (Vector2 p: potential_locations) {
+            if (b.getDistanceToNearestHold(p) > average) {
+                return_list.add(p);
+            }
+        }
+
+        return return_list;
+    }
+
     private boolean checkLocationValid(
             Vector2 loc,
             double min_distance,
@@ -102,22 +126,20 @@ public class HoldSuggestionGenerator extends Analyzer {
                 b.getBoardHeight() - loc.y < min_distance) {
             return false;
         }
-        Hold nearest_hold = b.getNearestHold(loc);
-        /// TODO this needs to account for ellipses                      vvvvvvvvvvvvv
-        double dist = nearest_hold.getCentrePoint().distanceTo(loc) - nearest_hold.size().x;
+        double dist = b.getDistanceToNearestHold(loc);
         return min_distance < dist;
     }
 
     public Hold.Type suggestHoldType(Hold h) {
         FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
         flat_board.removeHoldAt(h.position());
-        return suggestNewHoldType(flat_board, h.getCentrePoint());
+        return suggestNewHoldType(flat_board, flat_board.toFlat(h.getCentrePoint()));
     }
 
     public double suggestHoldDirection(Hold h) {
         FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
         flat_board.removeHoldAt(h.position());
-        return suggestHoldDirectionImpl(flat_board, h.getCentrePoint(), h.size());
+        return suggestHoldDirectionImpl(flat_board, flat_board.toFlat(h.getCentrePoint()), h.size());
     }
 
     private ArrayList<Hold.Direction> getRelevantHoldDirectionsFromPosition(FlatBoard b, Vector2 position) {
@@ -131,6 +153,10 @@ public class HoldSuggestionGenerator extends Analyzer {
         }
         if (b.getBoardWidth() * (1-margin_size) < position.x) {
             relevant_directions.remove(Hold.Direction.LEFT_SIDEPULL);
+            relevant_directions.remove(Hold.Direction.UNDERCUT);
+        }
+        if (position.y < b.getBoardHeight() * 0.3) {
+            // No underclings near the very top
             relevant_directions.remove(Hold.Direction.UNDERCUT);
         }
 
@@ -161,7 +187,8 @@ public class HoldSuggestionGenerator extends Analyzer {
             Hold.Direction new_dir = choices.get(r.nextInt(choices.size()));
             return Hold.Direction.getRandomAngle(new_dir);
         }
-        Hold.Direction dir = getLeastFilledHoldDirection(b, position);
+
+        Hold.Direction dir = getLeastFilledHoldDirection(b, position, getRelevantHoldDirectionsFromPosition(b, position));
         return Hold.Direction.getRandomAngle(dir);
     }
 
@@ -209,12 +236,12 @@ public class HoldSuggestionGenerator extends Analyzer {
         return least_filled_type;
     }
 
-    private Hold.Direction getLeastFilledHoldDirection(FlatBoard b, Vector2 position) {
+    private Hold.Direction getLeastFilledHoldDirection(FlatBoard b, Vector2 position, ArrayList<Hold.Direction> directions) {
         Hold.Direction least_filled_direction = Hold.Direction.UP;
         double smallest_proportion = Double.POSITIVE_INFINITY;
         double hold_vicinity_distance = getProximityDistance(b);
         ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
-        for (Hold.Direction direction_label : Hold.Direction.values()) {
+        for (Hold.Direction direction_label : directions) {
             double proportion =
                     (double)Board.countDirection(holds_in_proximity, direction_label) /
                     (double)m_hold_direction_pref_ratio[direction_label.ordinal()];

@@ -47,6 +47,8 @@ public class BoardSettings extends JPanel {
 			int ret = Integer.parseInt(m_min_textfield.getText());
 			if (ret < 0) {
 				throw new NumberFormatException();
+			} else if (ret == 0) {
+				return 10;
 			}
 			return ret;
 		}
@@ -54,11 +56,13 @@ public class BoardSettings extends JPanel {
 			int ret = Integer.parseInt(m_max_textfield.getText());
 			if (ret < 0) {
 				throw new NumberFormatException();
+			} else if (ret == 0) {
+				ret = 100;
 			}
 			int min = getHoldSizeMin();
 			if (ret < min) {
 				System.out.println("Max is smaller than min!");
-				return min + 1;
+				return min + 100;
 			}
 			return ret;
 		}

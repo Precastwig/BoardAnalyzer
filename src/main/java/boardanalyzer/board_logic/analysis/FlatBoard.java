@@ -60,7 +60,7 @@ public final class FlatBoard extends Board {
         }
     }
 
-    private Vector2 toFlat(Vector2 point) {
+    public Vector2 toFlat(Vector2 point) {
         Point2D.Double in = point.toPoint2D();
         Point2D.Double out = new Point2D.Double();
         m_to_flat.transform(in, out);

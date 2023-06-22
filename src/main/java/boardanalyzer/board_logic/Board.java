@@ -167,6 +167,12 @@ public class Board implements Serializable {
 		}
 		return ret_h;
 	}
+
+	public double getDistanceToNearestHold(Vector2 p) {
+		Hold nearest_hold = getNearestHold(p);
+		/// TODO this needs to account for ellipses                vvvvvvvvvvvvv
+		return nearest_hold.getCentrePoint().distanceTo(p) - nearest_hold.size().x;
+	}
 	
 	public boolean isOutsideBorders(Vector2 p) {
 		if (!areAllCornersSet()) {

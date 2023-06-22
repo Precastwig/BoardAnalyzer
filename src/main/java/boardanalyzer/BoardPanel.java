@@ -29,7 +29,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		BOARD_STATS_UP,
 		THINKING
 	}
-	static public String BOARD_EXTENSION = ".board";
+	static public String BOARD_EXTENSION = "board";
 	private String DEFAULT_BOARD_NAME = "default";
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -73,7 +73,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_file_chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		
 		try {
-			File f = new File(DEFAULT_BOARD_NAME + BOARD_EXTENSION);
+			File f = new File(DEFAULT_BOARD_NAME + "." + BOARD_EXTENSION);
 			if (!openSavedBoard(f)) {
 				// If a board can't be opened, then create a new one
 				m_board_save = new BoardSave();
@@ -181,10 +181,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				for (Hold h : holds) {
 					Color c = getColorFromHold(h);
 					Hold hold_to_render = h;
-					int lineWidth = 5;
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
 						hold_to_render = m_hold_selection_settings.getNewHold();
-						lineWidth += 2;
 					}
 					Vector2 circle_size = hold_to_render.size();
 					double direction = hold_to_render.direction();
@@ -198,11 +196,12 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 									circle_centre,
 									circle_size
 							);
+					int lineWidth = Math.max((int)(circle_size.x / 10.0), 3);
 
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
 						// Draw background highlight
 						Shape highlight = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
-						g2.setStroke(new BasicStroke(lineWidth + 5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
+						g2.setStroke(new BasicStroke(lineWidth + 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
 						g2.setColor(Color.WHITE);
 						g2.draw(highlight);
 						g2.drawLine(
@@ -391,7 +390,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		if (input.length() == 0){
 			input = DEFAULT_BOARD_NAME;
 		}
-		m_current_loaded_board_file = new File(input + BOARD_EXTENSION);
+		m_current_loaded_board_file = new File(input + "." + BOARD_EXTENSION);
 		if (m_current_loaded_board_file.exists()) {
 			int choice = JOptionPane.showConfirmDialog(
 					this, 
@@ -619,7 +618,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 
-		if (m_board_save.m_board.isOutsideBorders(m_hold_selection_settings.getHoldPosition())) {
+		if (m_board_save.m_board.isOutsideBorders(m_hold_selection_settings.getNewHold().getCentrePoint())) {
 			selectHold(m_selected_hold);
 			MainWindow.setInstructionText("Error! Cannot place hold outside of border");
 			return;
