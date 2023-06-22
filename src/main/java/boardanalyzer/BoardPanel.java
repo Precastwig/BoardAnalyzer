@@ -717,7 +717,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		MainWindow.setInstructionText("Click anywhere to add a hold, or click on an existing hold to edit.");
 	}
 	
-	private class CanvasMouseListener implements MouseListener, MouseMotionListener {
+	private class CanvasMouseListener implements MouseListener, MouseMotionListener, MouseWheelListener  {
         @Override
         public void mouseClicked(MouseEvent e) {
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
@@ -809,7 +809,12 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				repaint();
 			}
         }
-    }
+
+		@Override
+		public void mouseWheelMoved(MouseWheelEvent e) {
+			//// TODO add zoom
+		}
+	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {

@@ -4,7 +4,7 @@ When resetting my climbing wall, I found that I often wanted something to tell m
 This tool aims to help one analyze any particular climbing board set, provide suggestions on new hold positions/direction/type, produce heatmaps of various types.
 
 ## How to "install"
-1. Make sure you have at least java version 17 installed (https://www.java.com/en/download/manual.jsp)
+1. Make sure you have at least java version 17 installed (https://www.oracle.com/uk/java/technologies/downloads/)
 2. Download the latest .zip release and unpack
 3. Run /bin/BoardAnalyzer.bat on windows
 
@@ -28,6 +28,8 @@ Since the program is changing quite often, I won't go into details but the jist 
         - Drag on "tip" of direction -> change size/direction
         - ????
     - Add ability to select other holds while one is selected
+- BoardSettings:
+    - Add "set to current" button to type/direction/size tabs
 - UI:
     - Fix the degrees symbol displaying a spanish A
     - Dissallow features until board is fully set up (ie. don't let people use any analysis tools until all corners added and board size has been input)
