@@ -97,6 +97,14 @@ public class BoardSettings extends JPanel {
 		m_set_board_corners_button = new JButton("Set board corners");
 		m_save_settings_button = new JButton("Save");
 
+		// Set action commands
+		m_new_board_button.setActionCommand("NewBoard");
+		m_open_board_button.setActionCommand("OpenBoard");
+		m_clear_holds_button.setActionCommand("ClearAllHolds");
+		m_set_lowest_hold_button.setActionCommand("SetLowestHandHoldHeight");
+		m_set_board_corners_button.setActionCommand("SetCorners");
+		m_save_settings_button.setActionCommand("Save");
+
 		// Set sizes
 		m_clear_holds_button.setPreferredSize(new Dimension(preferred_width, 20));
 		m_new_board_button.setPreferredSize(new Dimension(preferred_width, 20));

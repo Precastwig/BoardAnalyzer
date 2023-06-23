@@ -28,7 +28,6 @@ Since the program is changing quite often, I won't go into details but the jist 
 - BoardSettings:
     - Add "set to current" button to type/direction/size tabs
 - UI:
-    - Fix the degrees symbol displaying a spanish A
     - Dissallow features until board is fully set up (ie. don't let people use any analysis tools until all corners added and board size has been input)
     - Show errors/warnings in red on info pane, like when saving a hold that's invalid
     - Show progress bar during long generations/Put them on a seperate thread

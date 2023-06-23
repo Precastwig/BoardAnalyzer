@@ -164,7 +164,7 @@ public class HoldSelectionSettings extends JPanel {
 		m_new_hold.setDirection(rad);
 		double adjusted_degs = Math.toDegrees(rad - (3 * Math.PI)/2 + (4 * Math.PI)) % 360;
 		DecimalFormat formatted_num = new DecimalFormat("#.##");
-		m_direction_label.setText("Direction: " + formatted_num.format(adjusted_degs) + "°");
+		m_direction_label.setText("Direction: " + formatted_num.format(adjusted_degs) + "\u00B0");
 	}
 	
 	public void setHoldSize(
@@ -188,7 +188,7 @@ public class HoldSelectionSettings extends JPanel {
 		m_delete_hold_button.setEnabled(false);
 		m_suggest_type_button.setEnabled(false);
 		m_suggest_direction_button.setEnabled(false);
-		m_direction_label.setText("Direction: --°");
+		m_direction_label.setText("Direction: --\u00B0");
 		m_size_label.setText("Size: --");
 	}
 	
