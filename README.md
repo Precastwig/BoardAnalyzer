@@ -18,9 +18,6 @@ Since the program is changing quite often, I won't go into details but the jist 
 6. Use the various analysis tools
 
 ### To do
-- Refactorings:
-    - Clean up MainWindow (figure out how you're actually meant to use jpanels)
-    - Make all panels respond to app state
 - BoardPanel:
     - Force every hold to have a type
     - Change hold creation input to be "better"
