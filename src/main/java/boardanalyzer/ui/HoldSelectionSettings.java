@@ -1,18 +1,16 @@
 package boardanalyzer.ui;
 
+import boardanalyzer.BoardPanel;
 import boardanalyzer.board_logic.Hold;
 import boardanalyzer.utils.Vector2;
 
 import java.awt.GridLayout;
+import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 public class HoldSelectionSettings extends JPanel {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
@@ -23,11 +21,7 @@ public class HoldSelectionSettings extends JPanel {
 	private JLabel m_direction_label;
 	private JLabel m_size_label;
 	private Hold m_new_hold;
-	public HoldSelectionSettings(
-			JButton save_hold_button, 
-			JButton delete_hold_button, 
-			JButton suggest_type_button, 
-			JButton suggest_direction_button) {
+	public HoldSelectionSettings() {
 		super(new GridLayout(9, 1));
 		m_hold_type_checkboxes = new ArrayList<JCheckBox>();
 		for (Hold.Type hold : Hold.Type.values()) {
@@ -44,21 +38,46 @@ public class HoldSelectionSettings extends JPanel {
 		m_size_label = new JLabel("Size: --");
 		add(m_size_label);
 		
-		m_save_hold_button = save_hold_button;
+		m_save_hold_button = new JButton("Save hold");
+		m_save_hold_button.setActionCommand("SaveHold");
 		add(m_save_hold_button);
-		
-		m_delete_hold_button = delete_hold_button;
+
+		m_delete_hold_button = new JButton("Delete hold");
+		m_delete_hold_button.setActionCommand("DeleteHold");
 		add(m_delete_hold_button);
-		
+
 		add(Box.createVerticalGlue());
-		
-		m_suggest_type_button = suggest_type_button;
+
+		m_suggest_type_button = new JButton("Suggest type");
+		m_suggest_type_button.setActionCommand("SuggestHoldType");
 		add(m_suggest_type_button);
-		
-		m_suggest_direction_button = suggest_direction_button;
+
+		m_suggest_direction_button = new JButton("Suggest direction");
+		m_suggest_direction_button.setActionCommand("SuggestHoldDirection");
 		add(m_suggest_direction_button);
-		
+
 		disableAll();
+	}
+
+	public void addActionListener(ActionListener listener) {
+		m_save_hold_button.addActionListener(listener);
+		m_delete_hold_button.addActionListener(listener);
+		m_suggest_type_button.addActionListener(listener);
+		m_suggest_direction_button.addActionListener(listener);
+	}
+
+	public void selectHold(Hold h) {
+		setCrimp(h.isCrimp());
+		setJug(h.isJug());
+		setSloper(h.isSloper());
+		setPocket(h.isPocket());
+		setPinch(h.isPinch());
+		setFoot(h.isFoot());
+		setDirection(h.direction());
+		setHoldSize(
+				h.size());
+		setPosition(h.position());
+		enableAll();
 	}
 	
 	public boolean isCrimp() {
@@ -149,8 +168,7 @@ public class HoldSelectionSettings extends JPanel {
 	}
 	
 	public void setHoldSize(
-			Vector2 size, 
-			Hold old_hold) {
+			Vector2 size) {
 		m_new_hold.setSize(size);
 		DecimalFormat formatted_num = new DecimalFormat("#.##");
 		m_size_label.setText("Size: (" +

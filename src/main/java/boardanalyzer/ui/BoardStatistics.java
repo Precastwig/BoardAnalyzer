@@ -2,6 +2,7 @@ package boardanalyzer.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.event.ActionListener;
 import java.util.HashSet;
 
 import javax.swing.Box;
@@ -17,14 +18,17 @@ import boardanalyzer.board_logic.Hold.Type;
 import boardanalyzer.ui.basic_elements.PercentageVisualiser;
 
 public class BoardStatistics extends JPanel {
-	
+	JButton m_show_hold_stats_button;
 	private JLabel m_num_holds;
 	PercentageVisualiser<Hold.Type> m_hold_type_percentages;
 	PercentageVisualiser<Hold.Direction> m_hold_direction_percentages;
 
 	public BarChart m_hold_type_chart;
 	
-	public BoardStatistics(JButton show_hold_stats) {
+	public BoardStatistics() {
+		m_show_hold_stats_button = new JButton("Show detailed hold statistics");
+		m_show_hold_stats_button.setActionCommand("ShowHoldStats");
+
 		setLayout(new BorderLayout());
 		JPanel inner_layout = new JPanel();
 		inner_layout.setLayout(new BoxLayout(inner_layout, BoxLayout.PAGE_AXIS));
@@ -41,7 +45,11 @@ public class BoardStatistics extends JPanel {
 		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.NORTH);
 		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.SOUTH);
 		add(inner_layout, BorderLayout.CENTER);
-		add(show_hold_stats, BorderLayout.PAGE_END);
+		add(m_show_hold_stats_button, BorderLayout.PAGE_END);
+	}
+
+	public void addActionListener(ActionListener listener) {
+		m_show_hold_stats_button.addActionListener(listener);
 	}
 	
 	public void updateLabels(Board b) {

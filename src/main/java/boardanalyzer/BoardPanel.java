@@ -49,23 +49,12 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	private Vector2 m_dragging_original_pos;
 	
 	private Hold m_selected_hold;
-	private final HoldSelectionSettings m_hold_selection_settings;
-	private final HoldGenerationSettings m_hold_generation_settings;
-	private final BoardSettings m_board_settings;
-	private final HeatmapSettings m_heatmap_settings;
-	private final BoardStatistics m_board_statistics;
+	private final SidePanel m_side_panel;
+	private final InstructionPanel m_instruction_panel;
 		
-	public BoardPanel(
-			HoldSelectionSettings hss,
-			BoardSettings bs,
-			HeatmapSettings hs,
-			HoldGenerationSettings hgs,
-			BoardStatistics bstats) {
-		m_hold_selection_settings = hss;
-		m_hold_generation_settings = hgs;
-		m_board_settings = bs;
-		m_heatmap_settings = hs;
-		m_board_statistics = bstats;
+	public BoardPanel(SidePanel sp, InstructionPanel ip) {
+		m_side_panel = sp;
+		m_instruction_panel= ip;
 		m_state = AppState.LOAD_IMAGE;
 		m_dragging_direction = false;
 
@@ -81,8 +70,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		} catch (ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}
-		
-		m_board_statistics.updateLabels(m_board_save.m_board);
+
+		m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 		
 		CanvasMouseListener mouselisten = new CanvasMouseListener();
         this.addMouseListener(mouselisten);
@@ -182,7 +171,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					Color c = getColorFromHold(h);
 					Hold hold_to_render = h;
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
-						hold_to_render = m_hold_selection_settings.getNewHold();
+						hold_to_render = m_side_panel.m_hold_selection_settings.getNewHold();
 					}
 					Vector2 circle_size = hold_to_render.size();
 					double direction = hold_to_render.direction();
@@ -314,7 +303,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		} else if (Objects.equals(e.getActionCommand(), "SetLowestHandHoldHeight")) {
 			setLowestHandHoldHeight();
 		}
-		m_board_statistics.updateLabels(m_board_save.m_board); // Inefficient, but covers our bases
+		m_side_panel.m_board_stats.updateLabels(m_board_save.m_board); // Inefficient, but covers our bases
 		repaint();
 	}
 
@@ -332,7 +321,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					m_board_save.m_hold_minimum_size,
 					m_board_save.m_hold_maximum_size);
 			Hold.Type new_type = generator.suggestHoldType(m_selected_hold);
-			m_hold_selection_settings.setToHoldType(new_type);
+			m_side_panel.m_hold_selection_settings.setToHoldType(new_type);
 		}
 	}
 	
@@ -346,7 +335,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					m_board_save.m_hold_minimum_size,
 					m_board_save.m_hold_maximum_size);
 			double new_dir = generator.suggestHoldDirection(m_selected_hold);
-			m_hold_selection_settings.setDirection(new_dir);
+			m_side_panel.m_hold_selection_settings.setDirection(new_dir);
 		}
 	}
 	
@@ -408,17 +397,17 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	
 	private void clearAllHolds() {
 		m_selected_hold = null;
-		m_hold_selection_settings.disableAll();
+		m_side_panel.m_hold_selection_settings.disableAll();
 		m_board_save.m_board.clearAllHolds();
 		setWaitingState();
 	}
 	
 	private void showHoldStats() {
 		if (m_state != AppState.BOARD_STATS_UP) {
-			add(m_board_statistics.m_hold_type_chart);
+			add(m_side_panel.m_board_stats.m_hold_type_chart);
 			m_state = AppState.BOARD_STATS_UP;			
 		} else {
-			remove(m_board_statistics.m_hold_type_chart);
+			remove(m_side_panel.m_board_stats.m_hold_type_chart);
 			m_state = AppState.WAITING;
 		}
 	}
@@ -434,13 +423,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				m_board_save.m_hold_direction_ratio,
 				m_board_save.m_hold_minimum_size,
 				m_board_save.m_hold_maximum_size);
-		Optional<Hold> new_hold = generator.generateHold(m_hold_generation_settings);
+		Optional<Hold> new_hold = generator.generateHold(m_side_panel.m_hold_generation_settings);
 		if (new_hold.isPresent()) {
 			m_board_save.m_board.addHold(new_hold.get());
 			selectHold(new_hold.get());
-			m_board_statistics.updateLabels(m_board_save.m_board);
+			m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 		} else { 
-			MainWindow.m_instruction_panel.m_instruction_label.setText("Hold generation failed.");
+			m_instruction_panel.setText("Hold generation failed.");
 		}
 	}
 	
@@ -455,7 +444,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			o.writeObject(m_board_save);
 			o.flush();
 			o.close();
-			MainWindow.setInstructionText("Board saved to file " + file.getAbsolutePath());
+			m_instruction_panel.setText("Board saved to file " + file.getAbsolutePath());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -466,7 +455,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				m_board_save.m_board,
 				m_board_save.m_board_dimensions);
 		File output_file = new File("heatmap.png");
-		HashSet<Hold.Type> holdtypes = m_heatmap_settings.getSelectedHoldTypes();
+		HashSet<Hold.Type> holdtypes = m_side_panel.m_heatmap_settings.getSelectedHoldTypes();
 		if (holdtypes.isEmpty()) {
 			holdtypes.add(Hold.Type.CRIMP);
 			holdtypes.add(Hold.Type.FOOT);
@@ -475,16 +464,16 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			holdtypes.add(Hold.Type.POCKET);
 			holdtypes.add(Hold.Type.SLOPER);
 		}
-		MainWindow.setInstructionText("Generating heatmap..");
+		m_instruction_panel.setText("Generating heatmap..");
 		BufferedImage image = generator.generateHeatmap(
-				m_heatmap_settings.getBrightness(),
-				holdtypes, 
-				m_heatmap_settings.holdTypesShouldExactlyMatch(),
-				m_heatmap_settings.holdDirectionMatters()
+				m_side_panel.m_heatmap_settings.getBrightness(),
+				holdtypes,
+				m_side_panel.m_heatmap_settings.holdTypesShouldExactlyMatch(),
+				m_side_panel.m_heatmap_settings.holdDirectionMatters()
 				);
 		try {
 			ImageIO.write(image, "png", output_file);
-			MainWindow.m_instruction_panel.m_instruction_label.setText("<html>Generated heatmap file</html>");
+			m_instruction_panel.setText("<html>Generated heatmap file</html>");
 		} catch (IOException e1) {
 			System.out.println("Failed to write output file");
 		}
@@ -492,18 +481,18 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	
 	private void saveSettings() {
 		try {
-			m_board_save.m_board_dimensions = m_board_settings.getBoardDimensions();
+			m_board_save.m_board_dimensions = m_side_panel.m_board_settings.getBoardDimensions();
 		} catch (java.lang.NumberFormatException e) {
-			MainWindow.setInstructionText("Board dimensions in non-number format");
+			m_instruction_panel.setText("Board dimensions in non-number format");
 		}
 		try {
-			m_board_save.m_hold_minimum_size = m_board_settings.getHoldSizeMin();
-			m_board_save.m_hold_maximum_size = m_board_settings.getHoldSizeMax();
+			m_board_save.m_hold_minimum_size = m_side_panel.m_board_settings.getHoldSizeMin();
+			m_board_save.m_hold_maximum_size = m_side_panel.m_board_settings.getHoldSizeMax();
 		} catch (java.lang.NumberFormatException e) {
-			MainWindow.setInstructionText("Hold size min/max in non-number format");
+			m_instruction_panel.setText("Hold size min/max in non-number format");
 		}
-		m_board_save.m_hold_type_ratio = m_board_settings.getHoldTypeRatio();
-		m_board_save.m_hold_direction_ratio = m_board_settings.getHoldDirectionRatio();
+		m_board_save.m_hold_type_ratio = m_side_panel.m_board_settings.getHoldTypeRatio();
+		m_board_save.m_hold_direction_ratio = m_side_panel.m_board_settings.getHoldDirectionRatio();
 	}
 	
 	private void openFileOpenerDialogAndOpenFile() {
@@ -576,11 +565,11 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			ObjectInputStream oi = new ObjectInputStream(fi);
 			m_board_save = (BoardSave)oi.readObject();
 			oi.close();
-			m_board_settings.setBoardDimensions(m_board_save.m_board_dimensions);
-			m_board_settings.setHoldSizeMin(m_board_save.m_hold_minimum_size);
-			m_board_settings.setHoldSizeMax(m_board_save.m_hold_maximum_size);
-			m_board_settings.setHoldTypeRatio(m_board_save.m_hold_type_ratio);
-			m_board_settings.setHoldDirectionRatio(m_board_save.m_hold_direction_ratio);
+			m_side_panel.m_board_settings.setBoardDimensions(m_board_save.m_board_dimensions);
+			m_side_panel.m_board_settings.setHoldSizeMin(m_board_save.m_hold_minimum_size);
+			m_side_panel.m_board_settings.setHoldSizeMax(m_board_save.m_hold_maximum_size);
+			m_side_panel.m_board_settings.setHoldTypeRatio(m_board_save.m_hold_type_ratio);
+			m_side_panel.m_board_settings.setHoldDirectionRatio(m_board_save.m_hold_direction_ratio);
 			MainWindow.m_frame.setSize(
 					(int)m_board_save.m_board.getBoardWidth(), 
 					(int)m_board_save.m_board.getBoardHeight());
@@ -590,7 +579,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				setCornerSetState();
 			}
 			m_current_loaded_board_file = f;
-			m_board_statistics.updateLabels(m_board_save.m_board);
+			m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 			repaint();
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found");
@@ -603,13 +592,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	private void deleteSelectedHold() {
 		m_board_save.m_board.removeHold(m_selected_hold);
 		deselectHold();
-		m_board_statistics.updateLabels(m_board_save.m_board);
+		m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 	}
 	
 	private void deselectHold() {
 		m_selected_hold = null;
 		m_state = AppState.WAITING;
-		m_hold_selection_settings.disableAll();
+		m_side_panel.m_hold_selection_settings.disableAll();
 	}
 	
 	private void saveSelectedHold() {
@@ -618,52 +607,41 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 
-		if (m_board_save.m_board.isOutsideBorders(m_hold_selection_settings.getNewHold().getCentrePoint())) {
+		if (m_board_save.m_board.isOutsideBorders(m_side_panel.m_hold_selection_settings.getNewHold().getCentrePoint())) {
 			selectHold(m_selected_hold);
-			MainWindow.setInstructionText("Error! Cannot place hold outside of border");
+			m_instruction_panel.setText("Error! Cannot place hold outside of border");
 			return;
 		}
 
-		if (m_hold_selection_settings.isCrimp()) {
+		if (m_side_panel.m_hold_selection_settings.isCrimp()) {
 			m_selected_hold.addType(Hold.Type.CRIMP);
 		}
-		if (m_hold_selection_settings.isJug()) {
+		if (m_side_panel.m_hold_selection_settings.isJug()) {
 			m_selected_hold.addType(Hold.Type.JUG);
 		}
-		if (m_hold_selection_settings.isSloper()) {
+		if (m_side_panel.m_hold_selection_settings.isSloper()) {
 			m_selected_hold.addType(Hold.Type.SLOPER);
 		}
-		if (m_hold_selection_settings.isPocket()) {
+		if (m_side_panel.m_hold_selection_settings.isPocket()) {
 			m_selected_hold.addType(Hold.Type.POCKET);
 		}
-		if (m_hold_selection_settings.isPinch()) {
+		if (m_side_panel.m_hold_selection_settings.isPinch()) {
 			m_selected_hold.addType(Hold.Type.PINCH);
 		}
-		if (m_hold_selection_settings.isFoot()) {
+		if (m_side_panel.m_hold_selection_settings.isFoot()) {
 			m_selected_hold.addType(Hold.Type.FOOT);
 		}
-		m_selected_hold.setDirection(m_hold_selection_settings.getDirection());
-		m_selected_hold.setSize(m_hold_selection_settings.getHoldSize());
-		m_selected_hold.setPosition(m_hold_selection_settings.getHoldPosition());
+		m_selected_hold.setDirection(m_side_panel.m_hold_selection_settings.getDirection());
+		m_selected_hold.setSize(m_side_panel.m_hold_selection_settings.getHoldSize());
+		m_selected_hold.setPosition(m_side_panel.m_hold_selection_settings.getHoldPosition());
 		deselectHold();
-		m_board_statistics.updateLabels(m_board_save.m_board);
+		m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 	}
 	
 	private void selectHold(Hold h) {
 		m_selected_hold = h;
-		m_hold_selection_settings.setCrimp(m_selected_hold.isCrimp());
-		m_hold_selection_settings.setJug(m_selected_hold.isJug());
-		m_hold_selection_settings.setSloper(m_selected_hold.isSloper());
-		m_hold_selection_settings.setPocket(m_selected_hold.isPocket());
-		m_hold_selection_settings.setPinch(m_selected_hold.isPinch());
-		m_hold_selection_settings.setFoot(m_selected_hold.isFoot());
-		m_hold_selection_settings.setDirection(m_selected_hold.direction());
-		m_hold_selection_settings.setHoldSize(
-				m_selected_hold.size(), 
-				m_selected_hold);
-		m_hold_selection_settings.setPosition(m_selected_hold.position());
+		m_side_panel.m_hold_selection_settings.selectHold(m_selected_hold);
 		m_state = AppState.HOLD_SELECTED;
-		m_hold_selection_settings.enableAll();
 	}
 		
 	private void tryClick(int x, int y) {
@@ -683,7 +661,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					if (hold_maybe.isPresent()) {
 						selectHold(hold_maybe.get());
 					} else {
-						MainWindow.setInstructionText("Selection is outside of board limits");
+						m_instruction_panel.setText("Selection is outside of board limits");
 					}
 				}
 			}
@@ -704,17 +682,17 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 
 	private void setLowestHandHoldState() {
 		m_state = AppState.LOWEST_HAND_HOLD_SET;
-		MainWindow.setInstructionText("Set the lowest position on the board that is acceptable for a hand hold");
+		m_instruction_panel.setText("Set the lowest position on the board that is acceptable for a hand hold");
 	}
 
 	private void setCornerSetState() {
 		m_state = AppState.CORNER_SET;
-		MainWindow.setInstructionText("The corners of the board need to be located, click on the corners in clockwise order.");
+		m_instruction_panel.setText("The corners of the board need to be located, click on the corners in clockwise order.");
 	}
 	
 	private void setWaitingState() {
 		m_state = AppState.WAITING;
-		MainWindow.setInstructionText("Click anywhere to add a hold, or click on an existing hold to edit.");
+		m_instruction_panel.setText("Click anywhere to add a hold, or click on an existing hold to edit.");
 	}
 	
 	private class CanvasMouseListener implements MouseListener, MouseMotionListener, MouseWheelListener  {
@@ -730,13 +708,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
         	int y = e.getY();
         	
         	if (m_state == AppState.HOLD_SELECTED) {
-        		if (m_hold_selection_settings.getNewHold().contains(x, y)) {
+        		if (m_side_panel.m_hold_selection_settings.getNewHold().contains(x, y)) {
         			m_dragging_direction = true;
         		} else {
 					m_mouse_x = e.getX();
 					m_mouse_y = e.getY();
 					m_dragging_location = true;
-					m_dragging_original_pos = m_hold_selection_settings.getHoldPosition();
+					m_dragging_original_pos = m_side_panel.m_hold_selection_settings.getHoldPosition();
         		}
         	}
         }
@@ -773,15 +751,14 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				
 				double mouse_unit_vector_x = mouse_vector_x / vector_size;
 				double mouse_unit_vector_y = mouse_vector_y / vector_size;
-				
-				m_hold_selection_settings.setDirection(Math.atan2(mouse_unit_vector_y, mouse_unit_vector_x));
+
+				m_side_panel.m_hold_selection_settings.setDirection(Math.atan2(mouse_unit_vector_y, mouse_unit_vector_x));
     			
-				Vector2 old_size = m_hold_selection_settings.getHoldSize();
+				Vector2 old_size = m_side_panel.m_hold_selection_settings.getHoldSize();
 				double old_ratio = old_size.x / old_size.y;
-				
-				m_hold_selection_settings.setHoldSize(
-						new Vector2(old_ratio * vector_size, vector_size), 
-						m_selected_hold);
+
+				m_side_panel.m_hold_selection_settings.setHoldSize(
+						new Vector2(old_ratio * vector_size, vector_size));
 				repaint();
     		} else if (m_dragging_width) {
 //    			Vector2 circle_centre = m_selected_hold.getCentrePoint();
@@ -795,7 +772,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				Vector2 mouse_movement = new Vector2(x - m_mouse_x, y - m_mouse_y);
 				//System.out.println("(" + mouse_movement.x + ", " + mouse_movement.y + ")");
 				Vector2 new_pos = new Vector2(m_dragging_original_pos.x + mouse_movement.x, m_dragging_original_pos.y + mouse_movement.y);
-				m_hold_selection_settings.setPosition(new_pos);
+				m_side_panel.m_hold_selection_settings.setPosition(new_pos);
 				repaint();
 			}
         }

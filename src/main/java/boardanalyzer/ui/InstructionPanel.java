@@ -1,5 +1,7 @@
 package boardanalyzer.ui;
 
+import boardanalyzer.MainWindow;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 
@@ -10,7 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
 public class InstructionPanel extends JPanel  {
-	public JLabel m_instruction_label;
+	private JLabel m_instruction_label;
 	private JProgressBar m_progress_bar;
 	public InstructionPanel() {
 		setLayout(new BorderLayout());
@@ -28,6 +30,10 @@ public class InstructionPanel extends JPanel  {
         add(inner_layout, BorderLayout.CENTER);
 		m_progress_bar.setVisible(false);
 		m_progress_bar.setPreferredSize(new Dimension(500, 20));
+	}
+
+	public void setText(String s) {
+		m_instruction_label.setText("<html>" + s + "</html>");
 	}
 	
 	public void updateProgressBarRange(int min, int max) {
