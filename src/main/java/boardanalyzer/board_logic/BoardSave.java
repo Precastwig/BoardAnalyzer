@@ -52,7 +52,7 @@ public class BoardSave implements Serializable {
         if (in.available() > 0) {
         	m_board_image = ImageIO.read(in);        	
         } else {
-        	System.out.println("Image not availabele to read");
+        	System.out.println("Image not available to read");
         }
     }
 }

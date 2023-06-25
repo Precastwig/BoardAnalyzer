@@ -401,8 +401,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 		m_side_panel.m_board_settings.setBoardDimensions(size_input.getBoardSize());
-		openFileOpenerDialogAndOpenFile();
-		saveBoard(m_current_loaded_board_file);
+		if (openFileOpenerDialogAndOpenFile()) {
+			saveBoard(m_current_loaded_board_file);
+		}
 	}
 	
 	private void clearAllHolds() {
@@ -505,7 +506,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_board_save.m_hold_direction_ratio = m_side_panel.m_board_settings.getHoldDirectionRatio();
 	}
 	
-	private void openFileOpenerDialogAndOpenFile() {
+	private boolean openFileOpenerDialogAndOpenFile() {
 		m_file_chooser.setFileFilter(new FileNameExtensionFilter("JPG and PNG images", "jpeg", "jpg", "png"));
 		int returnVal = m_file_chooser.showDialog(this, "Open Image");
 
@@ -513,10 +514,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
             File chosen_file = m_file_chooser.getSelectedFile();
 			try {
 				openImageFile(chosen_file);
+				return true;
 			} catch (IOException e) {
 				e.printStackTrace();
+				return false;
 			}
         }
+		return false;
 	}
 	
 	private void openImageFile(File file) throws IOException {
@@ -818,9 +822,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				deleteSelectedHold();
 				repaint();
 			}
+			if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+				saveSelectedHold();
+			}
 		}
 		/// Ctrl + S
-		if (e.getKeyCode() == KeyEvent.VK_S && (e.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
+		int onmask = KeyEvent.CTRL_DOWN_MASK;
+		if (e.getKeyCode() == KeyEvent.VK_S && (e.getModifiersEx() & (onmask)) == onmask) {
 			if (m_state == AppState.HOLD_SELECTED) {
 				saveSelectedHold();
 				repaint();
