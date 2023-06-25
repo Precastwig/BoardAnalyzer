@@ -10,6 +10,7 @@ public class SidePanel extends JPanel {
     public HoldSelectionSettings m_hold_selection_settings;
     public HoldGenerationSettings m_hold_generation_settings;
     public BoardSettings m_board_settings;
+    private JTabbedPane m_tab_panel;
 
     public SidePanel(int width) {
         setLayout(new GridLayout(2, 1, 10, 10));
@@ -23,15 +24,15 @@ public class SidePanel extends JPanel {
 
         m_heatmap_settings.setPreferredSize(new Dimension(width, 600));
 
-        JTabbedPane tabbed_panel = new JTabbedPane();
-        tabbed_panel.addTab("Board settings", m_board_settings);
-        tabbed_panel.addTab("Heatmap", m_heatmap_settings);
-        tabbed_panel.addTab("Hold Suggestion", m_hold_generation_settings);
-        tabbed_panel.addTab("Board Statistics", m_board_stats);
+        m_tab_panel = new JTabbedPane();
+        m_tab_panel.addTab("Board settings", m_board_settings);
+        m_tab_panel.addTab("Heatmap", m_heatmap_settings);
+        m_tab_panel.addTab("Hold Suggestion", m_hold_generation_settings);
+        m_tab_panel.addTab("Board Statistics", m_board_stats);
 
-        tabbed_panel.setPreferredSize(new Dimension(width, 600));
+        m_tab_panel.setPreferredSize(new Dimension(width, 600));
 
-        add(tabbed_panel);
+        add(m_tab_panel);
         add(m_hold_selection_settings);
     }
 

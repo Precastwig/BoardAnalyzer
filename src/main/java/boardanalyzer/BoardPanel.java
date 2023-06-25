@@ -308,7 +308,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	}
 
 	private void setLowestHandHoldHeight() {
-		m_state = AppState.LOWEST_HAND_HOLD_SET;
+		setLowestHandHoldState();
 	}
 	
 	private void suggestHoldType() {
@@ -391,6 +391,16 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				return;
 			}
 		}
+		BoardSizeInputPanel size_input = new BoardSizeInputPanel();
+		int choice = JOptionPane.showConfirmDialog(null,
+				size_input,
+				"JOptionPane Example : ",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE);
+		if (choice != JOptionPane.YES_OPTION) {
+			return;
+		}
+		m_side_panel.m_board_settings.setBoardDimensions(size_input.getBoardSize());
 		openFileOpenerDialogAndOpenFile();
 		saveBoard(m_current_loaded_board_file);
 	}

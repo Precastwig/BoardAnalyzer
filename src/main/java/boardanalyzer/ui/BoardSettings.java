@@ -11,12 +11,7 @@ import java.awt.TextField;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
+import javax.swing.*;
 
 public class BoardSettings extends JPanel {
 	static class MinMaxSizePanel extends JPanel {
@@ -77,8 +72,7 @@ public class BoardSettings extends JPanel {
 	private final JButton m_set_lowest_hold_button;
 	private final JButton m_set_board_corners_button;
 	private final JButton m_save_settings_button;
-	private final TextField m_width_textfield;
-	private final TextField m_height_textfield;
+	private final BoardSizeInputPanel m_board_size_input;
 	private final PercentageChooser<Hold.Type> m_hold_type_bars;
 	private final PercentageChooser<Hold.Direction> m_hold_direction_bars;
 	private final MinMaxSizePanel m_hold_size;
@@ -93,7 +87,7 @@ public class BoardSettings extends JPanel {
 		m_new_board_button = new JButton("New board");
 		m_open_board_button = new JButton("Open board");
 		m_clear_holds_button = new JButton("Clear all holds");
-		m_set_lowest_hold_button = new JButton("Set lowest allowed hand-hold height");
+		m_set_lowest_hold_button = new JButton("<html><centre>Set lowest allowed hand height</centre></html>");
 		m_set_board_corners_button = new JButton("Set board corners");
 		m_save_settings_button = new JButton("Save");
 
@@ -106,12 +100,12 @@ public class BoardSettings extends JPanel {
 		m_save_settings_button.setActionCommand("Save");
 
 		// Set sizes
-		m_clear_holds_button.setPreferredSize(new Dimension(preferred_width, 20));
-		m_new_board_button.setPreferredSize(new Dimension(preferred_width, 20));
-		m_set_lowest_hold_button.setPreferredSize(new Dimension(preferred_width, 20));
-		m_open_board_button.setPreferredSize(new Dimension(preferred_width, 20));
-		m_set_board_corners_button.setPreferredSize(new Dimension(preferred_width, 20));
-		m_save_settings_button.setPreferredSize(new Dimension(preferred_width, 20));
+//		m_clear_holds_button.setPreferredSize(new Dimension(preferred_width, 20));
+//		m_new_board_button.setPreferredSize(new Dimension(preferred_width, 20));
+//		m_set_lowest_hold_button.setPreferredSize(new Dimension(preferred_width, 20));
+//		m_open_board_button.setPreferredSize(new Dimension(preferred_width, 20));
+//		m_set_board_corners_button.setPreferredSize(new Dimension(preferred_width, 20));
+//		m_save_settings_button.setPreferredSize(new Dimension(preferred_width, 20));
 
 		// Set alignment
 		m_new_board_button.setAlignmentX(0.5f);
@@ -121,26 +115,8 @@ public class BoardSettings extends JPanel {
 		m_clear_holds_button.setAlignmentX(0.5f);
 		m_set_lowest_hold_button.setAlignmentX(0.5f);
 
-		m_width_textfield = new TextField();
-		m_height_textfield = new TextField();
+		m_board_size_input = new BoardSizeInputPanel();
 
-		JPanel width_input = new JPanel();
-        JLabel width_label = new JLabel("Width");
-        m_width_textfield.setText("0");
-//        m_width_textfield.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
-        width_input.add(width_label);
-        width_input.add(m_width_textfield);
-//        width_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 20));
-        width_input.setAlignmentX(0.5f);
-
-        JPanel height_input = new JPanel();
-        JLabel height_label = new JLabel("Height");
-        m_height_textfield.setText("0");
-//        m_height_textfield.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
-        height_input.add(height_label);
-        height_input.add(m_height_textfield);
-//        height_input.setPreferredSize(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH / 2, 20));
-        height_input.setAlignmentX(0.5f);
         m_hold_type_bars = new PercentageChooser<Hold.Type>(Hold.Type.getHandTypes());
         m_hold_direction_bars = new PercentageChooser<Hold.Direction>(Hold.Direction.values());
         m_hold_size = new MinMaxSizePanel();
@@ -160,8 +136,7 @@ public class BoardSettings extends JPanel {
 		inner_panel.add(m_set_lowest_hold_button);
         inner_panel.add(m_clear_holds_button);
 //        inner_panel.add(Box.createRigidArea(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 40)));
-        inner_panel.add(width_input);
-        inner_panel.add(height_input);
+        inner_panel.add(m_board_size_input);
         inner_panel.add(hold_pref_label);
         inner_panel.add(tabbed_panel);
         inner_panel.add(Box.createVerticalGlue());
@@ -214,21 +189,20 @@ public class BoardSettings extends JPanel {
 		return m_hold_direction_bars.getRatio();
 	}
 	
-	public Vector2 getBoardDimensions() throws NumberFormatException {
+	public Vector2 getBoardDimensions() {
 		return new Vector2(getBoardWidth(), getBoardHeight());
 	}
 	
-	public double getBoardWidth() throws NumberFormatException {
-		return Double.parseDouble(m_width_textfield.getText());
+	public double getBoardWidth() {
+		return m_board_size_input.getBoardWidth();
 	}
 	
-	public double getBoardHeight() throws NumberFormatException {
-		return Double.parseDouble(m_height_textfield.getText());
+	public double getBoardHeight() {
+		return m_board_size_input.getBoardHeight();
 	}
 	
 	public void setBoardDimensions(Vector2 d) {
-		DecimalFormat formatted_num = new DecimalFormat("#.##");
-		m_width_textfield.setText(formatted_num.format(d.x));
-		m_height_textfield.setText(formatted_num.format(d.y));
+		m_board_size_input.setBoardWidth(d.x);
+		m_board_size_input.setBoardHeight(d.y);
 	}
 }
