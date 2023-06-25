@@ -5,10 +5,7 @@ import boardanalyzer.utils.Vector2;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 
 import javax.imageio.ImageIO;
 
@@ -40,6 +37,7 @@ public class BoardSave implements Serializable {
 		m_hold_maximum_size = Integer.MAX_VALUE;
 	}
 	
+	@Serial
 	private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         if (m_board_image != null) {
@@ -47,7 +45,8 @@ public class BoardSave implements Serializable {
         }
     }
 
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    @Serial
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (in.available() > 0) {
         	m_board_image = ImageIO.read(in);        	

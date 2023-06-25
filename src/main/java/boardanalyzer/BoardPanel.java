@@ -5,6 +5,7 @@ import boardanalyzer.board_logic.Hold;
 import boardanalyzer.board_logic.analysis.HeatmapGenerator;
 import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
+import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 
 import javax.imageio.ImageIO;
@@ -12,6 +13,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
@@ -41,13 +44,22 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	
 	private BoardSave m_board_save;
 	private File m_current_loaded_board_file;
-	private int m_mouse_x;
-	private int m_mouse_y;
-	private boolean m_dragging_direction;
-	private boolean m_dragging_width;
-	private boolean m_dragging_location;
-	private Vector2 m_dragging_original_pos;
-	
+	private Vector2 m_mouse_position;
+	enum DragState {
+		NO_DRAG,
+		DIRECTION_DRAG,
+		WIDTH_DRAG,
+		LOCATION_DRAG,
+		PANNING_DRAG
+	}
+	private DragState m_drag_state;
+	private Vector2 m_hold_original_pos;
+	private double m_board_zoom_factor;
+	private PerspectiveTransform m_board_to_render_transform;
+	private PerspectiveTransform m_render_to_board_transform;
+	private Vector2 m_max_render_offset;
+	private Vector2 m_render_offset;
+
 	private Hold m_selected_hold;
 	private final SidePanel m_side_panel;
 	private final InstructionPanel m_instruction_panel;
@@ -56,7 +68,10 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_side_panel = sp;
 		m_instruction_panel= ip;
 		m_state = AppState.LOAD_IMAGE;
-		m_dragging_direction = false;
+		m_drag_state = DragState.NO_DRAG;
+		m_board_zoom_factor = 1.0;
+		m_max_render_offset = new Vector2(0,0);
+		m_render_offset = new Vector2();
 
 		m_file_chooser = new JFileChooser();
 		m_file_chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -75,6 +90,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		
 		CanvasMouseListener mouselisten = new CanvasMouseListener();
         this.addMouseListener(mouselisten);
+		this.addMouseWheelListener(mouselisten);
         this.addMouseMotionListener(mouselisten);
         this.requestFocus();
         this.setLayout(new GridLayout(3, 1, 50, 200));
@@ -149,6 +165,55 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		return new Vector2(circle_centre.x + (unit_vector_x * circle_size.x / 2.0), 
 				circle_centre.y + (unit_vector_y * circle_size.y / 2.0));
 	}
+
+	public void setTransforms() {
+		int zoomed_board_width = (int)(m_board_save.m_board_dimensions.x * m_board_zoom_factor);
+		int zoomed_board_height = (int)(m_board_save.m_board_dimensions.y * m_board_zoom_factor);
+		m_board_to_render_transform = PerspectiveTransform.getQuadToQuad(
+				// From
+				0,0,
+				m_board_save.m_board_dimensions.x, 0,
+				m_board_save.m_board_dimensions.x, m_board_save.m_board_dimensions.y,
+				0, m_board_save.m_board_dimensions.y,
+				// To
+				0, 0,
+				zoomed_board_width, 0,
+				zoomed_board_width, zoomed_board_height,
+				0, zoomed_board_height
+		);
+		m_render_to_board_transform = PerspectiveTransform.getQuadToQuad(
+				// From
+				0, 0,
+				zoomed_board_width, 0,
+				zoomed_board_width, zoomed_board_height,
+				0, zoomed_board_height,
+				// To
+				0,0,
+				m_board_save.m_board_dimensions.x, 0,
+				m_board_save.m_board_dimensions.x, m_board_save.m_board_dimensions.y,
+				0, m_board_save.m_board_dimensions.y
+		);
+	}
+
+	public Vector2 transformBoardToRender(Vector2 pos) {
+		Point2D.Double new_pos = new Point2D.Double();
+		m_board_to_render_transform.transform(pos.toPoint2D(), new_pos);
+		return applyRenderOffset(new Vector2(new_pos));
+	}
+
+	public Vector2 applyRenderOffset(Vector2 pos) {
+		return new Vector2(pos.x + m_render_offset.x, pos.y + m_render_offset.y);
+	}
+
+	public Vector2 applyRenderOffsetInverse(Vector2 pos) {
+		return new Vector2(pos.x - m_render_offset.x, pos.y - m_render_offset.y);
+	}
+
+	public Vector2 transformRenderToBoard(Vector2 pos) {
+		Point2D.Double new_pos = new Point2D.Double();
+		m_render_to_board_transform.transform(pos.toPoint2D(), new_pos);
+		return applyRenderOffsetInverse(new Vector2(new_pos));
+	}
 	
 	@Override
     public void update(Graphics g) {
@@ -162,8 +227,14 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
 	    		RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		if (m_state != AppState.LOAD_IMAGE && m_board_save.m_board_image != null) {
-			g2.drawImage(m_board_save.m_board_image, 0, 0, (int)this.getSize().getWidth(), (int)this.getSize().getHeight(),this);			
-		
+			int resized_board_width = (int)(this.getSize().getWidth() * m_board_zoom_factor);
+			int resized_board_height = (int)(this.getSize().getHeight() * m_board_zoom_factor);
+
+			g2.drawImage(
+					m_board_save.m_board_image,
+					(int)m_render_offset.x, (int)m_render_offset.y,
+					(int)resized_board_width, (int)resized_board_height,this);
+
 			// Draw holds
 			ArrayList<Hold> holds = m_board_save.m_board.getHolds();
 			if (!holds.isEmpty()) {
@@ -173,12 +244,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
 						hold_to_render = m_side_panel.m_hold_selection_settings.getNewHold();
 					}
-					Vector2 circle_size = hold_to_render.size();
+					Vector2 circle_size = new Vector2(
+							hold_to_render.size().x * m_board_zoom_factor,
+							hold_to_render.size().y * m_board_zoom_factor);
 					double direction = hold_to_render.direction();
-					int circle_pos_x = (int) hold_to_render.position().x;
-					int circle_pos_y = (int) hold_to_render.position().y;
+					Vector2 circle_pos = transformBoardToRender(hold_to_render.position());
 
-					Vector2 circle_centre = hold_to_render.getCentrePoint();
+					Vector2 circle_centre = transformBoardToRender(hold_to_render.getCentrePoint());
 					Vector2 point_on_circle_in_dir =
 							getPointOnCircleFromRad(
 									direction,
@@ -189,7 +261,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 
 					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
 						// Draw background highlight
-						Shape highlight = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
+						Shape highlight = new Ellipse2D.Double(circle_pos.x, circle_pos.y, circle_size.x, circle_size.y);
 						g2.setStroke(new BasicStroke(lineWidth + 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
 						g2.setColor(Color.WHITE);
 						g2.draw(highlight);
@@ -210,7 +282,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 							(int) circle_centre.x,
 							(int) circle_centre.y
 					);
-					Shape circle = new Ellipse2D.Double(circle_pos_x, circle_pos_y, circle_size.x, circle_size.y);
+					Shape circle = new Ellipse2D.Double(circle_pos.x, circle_pos.y, circle_size.x, circle_size.y);
 					g2.draw(circle);
 				}
 			}
@@ -219,28 +291,31 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			ArrayList<Vector2> corners = m_board_save.m_board.getCorners();
 			g2.setColor(Color.BLACK);
 			g2.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
-			
-			for (int i = 0; i < corners.size(); i++) {
-				g2.drawRect(
-						(int)corners.get(i).x, 
-						(int)corners.get(i).y, 
-						5, 5);
+			ArrayList<Vector2> transformed_corners = new ArrayList<>();
+			for (Vector2 corner : corners) {
+				transformed_corners.add(transformBoardToRender(corner));
+			}
+			for (int i = 0; i < transformed_corners.size(); i++) {
+//				g2.drawRect(
+//						(int)corners.get(i).x,
+//						(int)corners.get(i).y,
+//						5, 5);
 				if (i == 0) {
-					if (corners.size() == 4) {
+					if (transformed_corners.size() == 4) {
 						// We have all 4 corners, so connect 0 to 3
 						g2.drawLine(
-								(int)corners.get(0).x, 
-								(int)corners.get(0).y, 
-								(int)corners.get(3).x, 
-								(int)corners.get(3).y
+								(int)transformed_corners.get(0).x,
+								(int)transformed_corners.get(0).y,
+								(int)transformed_corners.get(3).x,
+								(int)transformed_corners.get(3).y
 								);
 					}
 				} else {					
 					g2.drawLine(
-							(int)corners.get(i-1).x, 
-							(int)corners.get(i-1).y, 
-							(int)corners.get(i).x, 
-							(int)corners.get(i).y
+							(int)transformed_corners.get(i-1).x,
+							(int)transformed_corners.get(i-1).y,
+							(int)transformed_corners.get(i).x,
+							(int)transformed_corners.get(i).y
 							);
 				}
 			}
@@ -253,7 +328,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			g2.drawLine(0, lowest_y, (int)m_board_save.m_board.getBoardWidth(), lowest_y);
 			// Show where mouse is
 			g2.setColor(new Color(15,255,63));
-			g2.drawLine(0, m_mouse_y,(int)m_board_save.m_board.getBoardWidth(), m_mouse_y );
+			g2.drawLine(0, (int)m_mouse_position.y,(int)m_board_save.m_board.getBoardWidth(), (int)m_mouse_position.y );
 		}
 		
 		if (m_state == AppState.BOARD_STATS_UP) {
@@ -402,6 +477,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		}
 		m_side_panel.m_board_settings.setBoardDimensions(size_input.getBoardSize());
 		if (openFileOpenerDialogAndOpenFile()) {
+			setTransforms();
 			saveBoard(m_current_loaded_board_file);
 		}
 	}
@@ -594,6 +670,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			}
 			m_current_loaded_board_file = f;
 			m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
+			setTransforms();
 			repaint();
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found");
@@ -658,7 +735,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_state = AppState.HOLD_SELECTED;
 	}
 		
-	private void tryClick(int x, int y) {
+	private void tryClick(double x, double y) {
 		switch (m_state) {
 			case WAITING -> {
 				if (m_board_save.m_board.existsHold(x, y)) {
@@ -712,32 +789,37 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	private class CanvasMouseListener implements MouseListener, MouseMotionListener, MouseWheelListener  {
         @Override
         public void mouseClicked(MouseEvent e) {
-        	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
+			// Transform the click into the potentially zoomed/shifted image space
+			if (e.getButton() == 1) {
+				Vector2 new_click_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+				tryClick(new_click_pos.x, new_click_pos.y);
 
-            tryClick(e.getX(),e.getY());
-        }
+			}
+		}
         @Override
         public void mousePressed(MouseEvent e) {
-        	int x = e.getX();
-        	int y = e.getY();
-        	
-        	if (m_state == AppState.HOLD_SELECTED) {
-        		if (m_side_panel.m_hold_selection_settings.getNewHold().contains(x, y)) {
-        			m_dragging_direction = true;
-        		} else {
-					m_mouse_x = e.getX();
-					m_mouse_y = e.getY();
-					m_dragging_location = true;
-					m_dragging_original_pos = m_side_panel.m_hold_selection_settings.getHoldPosition();
-        		}
-        	}
-        }
+			Vector2 click_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+			if (e.getButton() == 1) {
+				// Primary click
+				if (m_state == AppState.HOLD_SELECTED) {
+					if (m_side_panel.m_hold_selection_settings.getNewHold().contains(click_pos.x, click_pos.y)) {
+						m_drag_state = DragState.DIRECTION_DRAG;
+					} else {
+						m_mouse_position = click_pos;
+						m_drag_state = DragState.LOCATION_DRAG;
+						m_hold_original_pos = m_side_panel.m_hold_selection_settings.getHoldPosition();
+					}
+				}
+			} else if (e.getButton() == 2) {
+				// Middle click
+				m_mouse_position = click_pos;
+				m_drag_state = DragState.PANNING_DRAG;
+			}
+		}
         @Override
         public void mouseReleased(MouseEvent e) {
         	if (m_state == AppState.HOLD_SELECTED) {
-        		m_dragging_direction = false;
-        		m_dragging_width = false;
-				m_dragging_location = false;
+				m_drag_state = DragState.NO_DRAG;
         	}
         }
 
@@ -752,42 +834,60 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 
         @Override
         public void mouseDragged(MouseEvent e) {
-        	if (m_dragging_direction) {
-    			m_mouse_x = e.getX();
-    			m_mouse_y = e.getY();
-    			
-    			Vector2 circle_centre = m_selected_hold.getCentrePoint();
-				
-				int mouse_vector_x = (int) (m_mouse_x - circle_centre.x);
-				int mouse_vector_y = (int) (m_mouse_y - circle_centre.y);
-				
-				double vector_size = Math.hypot(mouse_vector_x, mouse_vector_y);
-				
-				double mouse_unit_vector_x = mouse_vector_x / vector_size;
-				double mouse_unit_vector_y = mouse_vector_y / vector_size;
+			switch(m_drag_state) {
+				case DIRECTION_DRAG -> {
+					m_mouse_position = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+					Vector2 circle_centre = m_selected_hold.getCentrePoint();
 
-				m_side_panel.m_hold_selection_settings.setDirection(Math.atan2(mouse_unit_vector_y, mouse_unit_vector_x));
-    			
-				Vector2 old_size = m_side_panel.m_hold_selection_settings.getHoldSize();
-				double old_ratio = old_size.x / old_size.y;
+					int mouse_vector_x = (int) (m_mouse_position.x - circle_centre.x);
+					int mouse_vector_y = (int) (m_mouse_position.y - circle_centre.y);
 
-				m_side_panel.m_hold_selection_settings.setHoldSize(
-						new Vector2(old_ratio * vector_size, vector_size));
-				repaint();
-    		} else if (m_dragging_width) {
-//    			Vector2 circle_centre = m_selected_hold.getCentrePoint();
-//    			m_selected_hold
-//    			m_selected_hold.direction();
-				//// TODO make ellipse creation work, a lot of underlying functions in analysis will require changing too
-    			repaint();
-    		} else if (m_dragging_location) {
-				int x = e.getX();
-				int y = e.getY();
-				Vector2 mouse_movement = new Vector2(x - m_mouse_x, y - m_mouse_y);
-				//System.out.println("(" + mouse_movement.x + ", " + mouse_movement.y + ")");
-				Vector2 new_pos = new Vector2(m_dragging_original_pos.x + mouse_movement.x, m_dragging_original_pos.y + mouse_movement.y);
-				m_side_panel.m_hold_selection_settings.setPosition(new_pos);
-				repaint();
+					// I have no idea why this needs to be multiplied by 2, probably the same reason the size
+					// needs to be divided by two when rendering, in other words, I've made garbage.
+					double vector_size = Math.hypot(mouse_vector_x, mouse_vector_y) * 2;
+
+					double mouse_unit_vector_x = mouse_vector_x / vector_size;
+					double mouse_unit_vector_y = mouse_vector_y / vector_size;
+
+					m_side_panel.m_hold_selection_settings.setDirection(Math.atan2(mouse_unit_vector_y, mouse_unit_vector_x));
+
+					Vector2 old_size = m_side_panel.m_hold_selection_settings.getHoldSize();
+					double old_ratio = old_size.x / old_size.y;
+
+					m_side_panel.m_hold_selection_settings.setHoldSize(
+							new Vector2(old_ratio * vector_size, vector_size));
+					repaint();
+				}
+				case WIDTH_DRAG -> {
+					//// TODO make ellipse creation work, a lot of underlying functions in analysis will require changing too
+					repaint();
+				}
+				case LOCATION_DRAG -> {
+					Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+					Vector2 mouse_movement = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
+					//System.out.println("(" + mouse_movement.x + ", " + mouse_movement.y + ")");
+					Vector2 new_pos = new Vector2(
+							m_hold_original_pos.x + mouse_movement.x,
+							m_hold_original_pos.y + mouse_movement.y);
+					m_side_panel.m_hold_selection_settings.setPosition(new_pos);
+					repaint();
+				}
+				case PANNING_DRAG -> {
+					if (m_board_zoom_factor <= 1.0) {
+						// Do nothing
+						return;
+					}
+					Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+					System.out.print("Mouse position ");
+					mouse_pos.print();
+					m_render_offset = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
+					//					System.out.print("Mouse movement ");
+//					mouse_movement.print();
+					capRenderOffsetByMax();
+					System.out.print("Render offset ");
+					m_render_offset.print();
+					repaint();
+				}
 			}
         }
 
@@ -795,15 +895,43 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
         public void mouseMoved(MouseEvent e) {
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
 			if (m_state == AppState.LOWEST_HAND_HOLD_SET) {
-				m_mouse_x = e.getX();
-				m_mouse_y = e.getY();
+				m_mouse_position = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
 				repaint();
 			}
         }
 
+		private void setMaxRenderOffset() {
+			int resized_board_width = (int)(m_board_save.m_board_dimensions.x * m_board_zoom_factor);
+			int resized_board_height = (int)(m_board_save.m_board_dimensions.y * m_board_zoom_factor);
+			double max_x_offset = m_board_save.m_board_dimensions.x - resized_board_width;
+			double max_y_offset = m_board_save.m_board_dimensions.y - resized_board_height;
+			m_max_render_offset = new Vector2(max_x_offset, max_y_offset);
+			capRenderOffsetByMax();
+		}
+
+		private void capRenderOffsetByMax() {
+			m_render_offset.x = Math.max(m_render_offset.x, m_max_render_offset.x);
+			m_render_offset.x = Math.min(m_render_offset.x, 0);
+			m_render_offset.y = Math.max(m_render_offset.y, m_max_render_offset.y);
+			m_render_offset.y = Math.min(m_render_offset.y, 0);
+		}
+
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
-			//// TODO add zoom
+			int notches = e.getWheelRotation();
+			double amount = Math.abs((double) notches / 10.0);
+			if (notches < 0) {
+				// In
+				m_board_zoom_factor += amount;
+				m_board_zoom_factor = Math.min(m_board_zoom_factor, 3);
+			} else {
+				// out
+				m_board_zoom_factor -= amount;
+				m_board_zoom_factor = Math.max(m_board_zoom_factor, 1);
+			}
+			setTransforms();
+			setMaxRenderOffset();
+			repaint();
 		}
 	}
 

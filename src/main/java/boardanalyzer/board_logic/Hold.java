@@ -209,7 +209,7 @@ public class Hold implements Serializable{
 		m_types.add(t);
 	}
 	
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		Vector2 centre = getCentrePoint();
 		return (Math.pow(x - centre.x,2) / Math.pow(m_size.x/2.0, 2)) + 
 			   (Math.pow(y - centre.y,2) / Math.pow(m_size.y/2.0, 2)) <= 1;

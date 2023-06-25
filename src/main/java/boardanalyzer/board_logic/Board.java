@@ -137,7 +137,7 @@ public class Board implements Serializable {
 		m_holds.clear();
 	}
 	
-	public boolean existsHold(int x, int y) {
+	public boolean existsHold(double x, double y) {
 		for (Hold mHold : m_holds) {
 			if (mHold.contains(x, y)) {
 				return true;
@@ -146,7 +146,7 @@ public class Board implements Serializable {
 		return false;
 	}
 	
-	public Hold getHold(int x, int y) throws IllegalAccessException {
+	public Hold getHold(double x, double y) throws IllegalAccessException {
 		for (Hold h : m_holds) {
 			if (h.contains(x, y)) {
 				return h;
