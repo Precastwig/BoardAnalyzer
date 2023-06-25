@@ -35,12 +35,17 @@ Since the program is changing quite often, I won't go into details but the jist 
     - Improve efficiency of heatmap generation (do something like quadtree for raytracing (Is it called Kd-tree?))
     - Visualize heatmap overlay on board and add button to hide/show
 - Major features:
+    - Add Suggestions for holds to REMOVE
     - Add ability to upload a new image for the same board
         - Upload new image
         - Pick new corners
         - Translate all points based upon new corner positions
     - Add ability to zoom in on board image (difficult? I think)
     - Allow dragging hold into ellipses, and fix underlying analysis to work with ellipses (tricksy, lots of math involved)
+    - Add route creation/saving (Not really the point of this app)
+        - Add hold suggestion during route creation
+        - Add auto finish climb feature
+        - Train AI on moonboard problems
     - Auto hold discovery (I will probably never do this)
 
 #### Why Java?
