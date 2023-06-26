@@ -55,8 +55,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	private DragState m_drag_state;
 	private Vector2 m_hold_original_pos;
 	private double m_board_zoom_factor;
-	private PerspectiveTransform m_board_to_render_transform;
-	private PerspectiveTransform m_render_to_board_transform;
+	private Vector2 m_previous_render_offset; // For use while dragging is happening
 	private Vector2 m_max_render_offset;
 	private Vector2 m_render_offset;
 
@@ -166,39 +165,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				circle_centre.y + (unit_vector_y * circle_size.y / 2.0));
 	}
 
-	public void setTransforms() {
-		int zoomed_board_width = (int)(m_board_save.m_board_dimensions.x * m_board_zoom_factor);
-		int zoomed_board_height = (int)(m_board_save.m_board_dimensions.y * m_board_zoom_factor);
-		m_board_to_render_transform = PerspectiveTransform.getQuadToQuad(
-				// From
-				0,0,
-				m_board_save.m_board_dimensions.x, 0,
-				m_board_save.m_board_dimensions.x, m_board_save.m_board_dimensions.y,
-				0, m_board_save.m_board_dimensions.y,
-				// To
-				0, 0,
-				zoomed_board_width, 0,
-				zoomed_board_width, zoomed_board_height,
-				0, zoomed_board_height
-		);
-		m_render_to_board_transform = PerspectiveTransform.getQuadToQuad(
-				// From
-				0, 0,
-				zoomed_board_width, 0,
-				zoomed_board_width, zoomed_board_height,
-				0, zoomed_board_height,
-				// To
-				0,0,
-				m_board_save.m_board_dimensions.x, 0,
-				m_board_save.m_board_dimensions.x, m_board_save.m_board_dimensions.y,
-				0, m_board_save.m_board_dimensions.y
-		);
-	}
-
 	public Vector2 transformBoardToRender(Vector2 pos) {
-		Point2D.Double new_pos = new Point2D.Double();
-		m_board_to_render_transform.transform(pos.toPoint2D(), new_pos);
-		return applyRenderOffset(new Vector2(new_pos));
+		Vector2 new_pos = new Vector2(pos.x * m_board_zoom_factor, pos.y * m_board_zoom_factor);
+		return applyRenderOffset(new_pos);
 	}
 
 	public Vector2 applyRenderOffset(Vector2 pos) {
@@ -210,9 +179,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	}
 
 	public Vector2 transformRenderToBoard(Vector2 pos) {
-		Point2D.Double new_pos = new Point2D.Double();
-		m_render_to_board_transform.transform(pos.toPoint2D(), new_pos);
-		return applyRenderOffsetInverse(new Vector2(new_pos));
+		Vector2 new_pos = applyRenderOffsetInverse(pos);
+		new_pos = new Vector2(new_pos.x / m_board_zoom_factor, new_pos.y / m_board_zoom_factor);
+		return new_pos;
 	}
 	
 	@Override
@@ -477,7 +446,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		}
 		m_side_panel.m_board_settings.setBoardDimensions(size_input.getBoardSize());
 		if (openFileOpenerDialogAndOpenFile()) {
-			setTransforms();
 			saveBoard(m_current_loaded_board_file);
 		}
 	}
@@ -670,7 +638,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			}
 			m_current_loaded_board_file = f;
 			m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
-			setTransforms();
 			repaint();
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found");
@@ -785,6 +752,23 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_state = AppState.WAITING;
 		m_instruction_panel.setText("Click anywhere to add a hold, or click on an existing hold to edit.");
 	}
+
+	private void setMaxRenderOffset() {
+		double resized_board_width = this.getSize().getWidth() * m_board_zoom_factor;
+		double resized_board_height = this.getSize().getHeight() * m_board_zoom_factor;
+		double max_x_offset = this.getSize().getWidth() - resized_board_width;
+		double max_y_offset = this.getSize().getHeight() - resized_board_height;
+		m_max_render_offset = new Vector2(max_x_offset, max_y_offset);
+		m_max_render_offset.print();
+		capRenderOffsetByMax();
+	}
+
+	private void capRenderOffsetByMax() {
+		m_render_offset.x = Math.max(m_render_offset.x, m_max_render_offset.x);
+		m_render_offset.x = Math.min(m_render_offset.x, 0);
+		m_render_offset.y = Math.max(m_render_offset.y, m_max_render_offset.y);
+		m_render_offset.y = Math.min(m_render_offset.y, 0);
+	}
 	
 	private class CanvasMouseListener implements MouseListener, MouseMotionListener, MouseWheelListener  {
         @Override
@@ -813,6 +797,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			} else if (e.getButton() == 2) {
 				// Middle click
 				m_mouse_position = click_pos;
+				m_previous_render_offset = new Vector2(m_render_offset);
 				m_drag_state = DragState.PANNING_DRAG;
 			}
 		}
@@ -877,15 +862,15 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 						// Do nothing
 						return;
 					}
-					Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
-					System.out.print("Mouse position ");
-					mouse_pos.print();
-					m_render_offset = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
+					Vector2 mouse_pos = new Vector2(e.getX() - m_previous_render_offset.x, e.getY() - m_previous_render_offset.y);
+					mouse_pos.x = mouse_pos.x / m_board_zoom_factor;
+					mouse_pos.y = mouse_pos.y / m_board_zoom_factor;
+					m_render_offset = new Vector2(
+							m_previous_render_offset.x + mouse_pos.x - m_mouse_position.x,
+							m_previous_render_offset.y + mouse_pos.y - m_mouse_position.y);
 					//					System.out.print("Mouse movement ");
 //					mouse_movement.print();
 					capRenderOffsetByMax();
-					System.out.print("Render offset ");
-					m_render_offset.print();
 					repaint();
 				}
 			}
@@ -900,22 +885,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			}
         }
 
-		private void setMaxRenderOffset() {
-			int resized_board_width = (int)(m_board_save.m_board_dimensions.x * m_board_zoom_factor);
-			int resized_board_height = (int)(m_board_save.m_board_dimensions.y * m_board_zoom_factor);
-			double max_x_offset = m_board_save.m_board_dimensions.x - resized_board_width;
-			double max_y_offset = m_board_save.m_board_dimensions.y - resized_board_height;
-			m_max_render_offset = new Vector2(max_x_offset, max_y_offset);
-			capRenderOffsetByMax();
-		}
-
-		private void capRenderOffsetByMax() {
-			m_render_offset.x = Math.max(m_render_offset.x, m_max_render_offset.x);
-			m_render_offset.x = Math.min(m_render_offset.x, 0);
-			m_render_offset.y = Math.max(m_render_offset.y, m_max_render_offset.y);
-			m_render_offset.y = Math.min(m_render_offset.y, 0);
-		}
-
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
 			int notches = e.getWheelRotation();
@@ -929,7 +898,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				m_board_zoom_factor -= amount;
 				m_board_zoom_factor = Math.max(m_board_zoom_factor, 1);
 			}
-			setTransforms();
 			setMaxRenderOffset();
 			repaint();
 		}
