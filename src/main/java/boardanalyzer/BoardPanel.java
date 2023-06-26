@@ -759,7 +759,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		double max_x_offset = this.getSize().getWidth() - resized_board_width;
 		double max_y_offset = this.getSize().getHeight() - resized_board_height;
 		m_max_render_offset = new Vector2(max_x_offset, max_y_offset);
-		m_max_render_offset.print();
 		capRenderOffsetByMax();
 	}
 
@@ -889,6 +888,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		public void mouseWheelMoved(MouseWheelEvent e) {
 			int notches = e.getWheelRotation();
 			double amount = Math.abs((double) notches / 10.0);
+			double zoom_before = m_board_zoom_factor;
 			if (notches < 0) {
 				// In
 				m_board_zoom_factor += amount;
@@ -898,6 +898,12 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				m_board_zoom_factor -= amount;
 				m_board_zoom_factor = Math.max(m_board_zoom_factor, 1);
 			}
+			// Move the board by where the mouse is
+			// This is to create the "zooming in on the mouse" behaviour
+			Vector2 mouse_position_movement = new Vector2(
+					(e.getX() * m_board_zoom_factor) - (e.getX() * zoom_before),
+					(e.getY() * m_board_zoom_factor) - (e.getY() * zoom_before));
+			m_render_offset = new Vector2(m_render_offset.x-mouse_position_movement.x, m_render_offset.y-mouse_position_movement.y);
 			setMaxRenderOffset();
 			repaint();
 		}
