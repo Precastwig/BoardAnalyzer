@@ -43,7 +43,6 @@ Since the program is changing quite often, I won't go into details but the jist 
         - Upload new image
         - Pick new corners
         - Translate all points based upon new corner positions
-    - Add ability to zoom in on board image (difficult? I think)
     - Allow dragging hold into ellipses, and fix underlying analysis to work with ellipses (tricksy, lots of math involved)
     - Add route creation/saving (Not really the point of this app)
         - Add hold suggestion during route creation
