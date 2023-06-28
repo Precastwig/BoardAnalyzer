@@ -57,6 +57,11 @@ public class Board implements Serializable {
 	public void clearCorners() {
 		m_board_corners.clear();
 	}
+
+	public void moveCorner(int index, Vector2 new_pos) {
+		m_board_corners.get(index).x = new_pos.x;
+		m_board_corners.get(index).y = new_pos.y;
+	}
 	
 	public boolean areAllCornersSet() {
 		return m_board_corners != null && m_board_corners.size() == 4; 
@@ -144,6 +149,19 @@ public class Board implements Serializable {
 			}
 		}
 		return false;
+	}
+
+	public int getNearestCornerIndex(Vector2 pos) {
+		double shortest_distance = Double.POSITIVE_INFINITY;
+		int index = 0;
+		for (int i = 0; i < m_board_corners.size(); i++) {
+			double dist = m_board_corners.get(i).distanceTo(pos);
+			if (dist < shortest_distance) {
+				shortest_distance = dist;
+				index = i;
+			}
+		}
+		return index;
 	}
 	
 	public Hold getHold(double x, double y) throws IllegalAccessException {

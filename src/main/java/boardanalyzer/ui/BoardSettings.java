@@ -8,12 +8,15 @@ import boardanalyzer.utils.Vector2;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.TextField;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
+import java.util.Objects;
 
 import javax.swing.*;
 
-public class BoardSettings extends JPanel {
+public class BoardSettings extends JPanel implements ActionListener {
+
 	static class MinMaxSizePanel extends JPanel {
 		private final TextField m_min_textfield;
 		private final TextField m_max_textfield;
@@ -70,7 +73,8 @@ public class BoardSettings extends JPanel {
 	private final JButton m_open_board_button;
 	private final JButton m_clear_holds_button;
 	private final JButton m_set_lowest_hold_button;
-	private final JButton m_set_board_corners_button;
+	private final JButton m_move_board_corners_button;
+	private boolean m_move_corners_text;
 	private final JButton m_save_settings_button;
 	private final BoardSizeInputPanel m_board_size_input;
 	private final PercentageChooser<Hold.Type> m_hold_type_bars;
@@ -88,7 +92,8 @@ public class BoardSettings extends JPanel {
 		m_open_board_button = new JButton("Open board");
 		m_clear_holds_button = new JButton("Clear all holds");
 		m_set_lowest_hold_button = new JButton("<html><centre>Set lowest allowed hand height</centre></html>");
-		m_set_board_corners_button = new JButton("Set board corners");
+		m_move_board_corners_button = new JButton("Move board corners");
+		m_move_corners_text = false;
 		m_save_settings_button = new JButton("Save");
 
 		// Set action commands
@@ -96,7 +101,7 @@ public class BoardSettings extends JPanel {
 		m_open_board_button.setActionCommand("OpenBoard");
 		m_clear_holds_button.setActionCommand("ClearAllHolds");
 		m_set_lowest_hold_button.setActionCommand("SetLowestHandHoldHeight");
-		m_set_board_corners_button.setActionCommand("SetCorners");
+		m_move_board_corners_button.setActionCommand("MoveCorners");
 		m_save_settings_button.setActionCommand("Save");
 
 		// Set sizes
@@ -111,7 +116,8 @@ public class BoardSettings extends JPanel {
 		m_new_board_button.setAlignmentX(0.5f);
 		m_open_board_button.setAlignmentX(0.5f);
 		m_save_settings_button.setAlignmentX(0.5f);
-		m_set_board_corners_button.setAlignmentX(0.5f);
+		m_move_board_corners_button.setAlignmentX(0.5f);
+		m_move_board_corners_button.addActionListener(this);
 		m_clear_holds_button.setAlignmentX(0.5f);
 		m_set_lowest_hold_button.setAlignmentX(0.5f);
 
@@ -132,7 +138,7 @@ public class BoardSettings extends JPanel {
 		inner_panel.add(m_new_board_button);
 		inner_panel.add(m_open_board_button);
 		inner_panel.add(Box.createRigidArea(new Dimension(0, 20)));
-        inner_panel.add(m_set_board_corners_button);
+        inner_panel.add(m_move_board_corners_button);
 		inner_panel.add(m_set_lowest_hold_button);
         inner_panel.add(m_clear_holds_button);
 //        inner_panel.add(Box.createRigidArea(new Dimension(MainWindow.PREFERRED_GENERATE_TAB_WIDTH, 40)));
@@ -152,9 +158,33 @@ public class BoardSettings extends JPanel {
 		m_new_board_button.addActionListener(listener);
 		m_open_board_button.addActionListener(listener);
 		m_save_settings_button.addActionListener(listener);
-		m_set_board_corners_button.addActionListener(listener);
+		m_move_board_corners_button.addActionListener(listener);
 		m_clear_holds_button.addActionListener(listener);
 		m_set_lowest_hold_button.addActionListener(listener);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (Objects.equals(e.getActionCommand(), "MoveCorners")) {
+			if (m_move_corners_text) {
+				m_move_board_corners_button.setText("Move board corners");
+				m_move_corners_text = false;
+				m_board_size_input.setVisible(true);
+				m_new_board_button.setVisible(true);
+				m_open_board_button.setVisible(true);
+				m_clear_holds_button.setVisible(true);
+				m_set_lowest_hold_button.setVisible(true);
+			} else {
+				m_move_board_corners_button.setText("Save board corners");
+				m_move_corners_text = true;
+				m_board_size_input.setVisible(false);
+				m_new_board_button.setVisible(false);
+				m_open_board_button.setVisible(false);
+				m_clear_holds_button.setVisible(false);
+				m_set_lowest_hold_button.setVisible(false);
+			}
+			repaint();
+		}
 	}
 
 	public int getHoldSizeMin() throws NumberFormatException {

@@ -5,7 +5,6 @@ import boardanalyzer.board_logic.Hold;
 import boardanalyzer.board_logic.analysis.HeatmapGenerator;
 import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
-import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 
 import javax.imageio.ImageIO;
@@ -13,8 +12,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.NoninvertibleTransformException;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
@@ -23,14 +20,13 @@ import javax.swing.event.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class BoardPanel extends JPanel implements ActionListener, ChangeListener, KeyListener {
-	private enum AppState {
+	private enum BoardPanelState {
 		LOAD_IMAGE,
-		CORNER_SET,
+		CORNER_MOVE,
 		LOWEST_HAND_HOLD_SET,
 		WAITING,
 		HOLD_SELECTED,
-		BOARD_STATS_UP,
-		THINKING
+		BOARD_STATS_UP
 	}
 	static public String BOARD_EXTENSION = "board";
 	private String DEFAULT_BOARD_NAME = "default";
@@ -39,7 +35,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	private static final Font DEFAULT_FONT = new Font("Times New Roman",
             Font.BOLD,
             50);
-	private AppState m_state;
+	private BoardPanelState m_state;
 	private final JFileChooser m_file_chooser;
 	
 	private BoardSave m_board_save;
@@ -50,9 +46,11 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		DIRECTION_DRAG,
 		WIDTH_DRAG,
 		LOCATION_DRAG,
-		PANNING_DRAG
+		PANNING_DRAG,
+		CORNER_DRAG
 	}
 	private DragState m_drag_state;
+	private int m_corner_index_dragging;
 	private Vector2 m_hold_original_pos;
 	private double m_board_zoom_factor;
 	private Vector2 m_previous_render_offset; // For use while dragging is happening
@@ -66,8 +64,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	public BoardPanel(SidePanel sp, InstructionPanel ip) {
 		m_side_panel = sp;
 		m_instruction_panel= ip;
-		m_state = AppState.LOAD_IMAGE;
+		m_state = BoardPanelState.LOAD_IMAGE;
 		m_drag_state = DragState.NO_DRAG;
+		m_corner_index_dragging = -1;
 		m_board_zoom_factor = 1.0;
 		m_max_render_offset = new Vector2(0,0);
 		m_render_offset = new Vector2();
@@ -124,7 +123,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	
 	public Color getColorFromHold(Hold h) {
 		int alpha = 255;
-		if (m_state == AppState.HOLD_SELECTED) {
+		if (m_state == BoardPanelState.HOLD_SELECTED) {
 			if (h != m_selected_hold) {
 				alpha = 126;
 			}
@@ -195,7 +194,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	    		RenderingHints.VALUE_ANTIALIAS_ON);
 	    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
 	    		RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		if (m_state != AppState.LOAD_IMAGE && m_board_save.m_board_image != null) {
+		if (m_state != BoardPanelState.LOAD_IMAGE && m_board_save.m_board_image != null) {
 			int resized_board_width = (int)(this.getSize().getWidth() * m_board_zoom_factor);
 			int resized_board_height = (int)(this.getSize().getHeight() * m_board_zoom_factor);
 
@@ -210,7 +209,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				for (Hold h : holds) {
 					Color c = getColorFromHold(h);
 					Hold hold_to_render = h;
-					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
+					if (m_state == BoardPanelState.HOLD_SELECTED && h == m_selected_hold) {
 						hold_to_render = m_side_panel.m_hold_selection_settings.getNewHold();
 					}
 					Vector2 circle_size = new Vector2(
@@ -228,7 +227,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 							);
 					int lineWidth = Math.max((int)(circle_size.x / 10.0), 3);
 
-					if (m_state == AppState.HOLD_SELECTED && h == m_selected_hold) {
+					if (m_state == BoardPanelState.HOLD_SELECTED && h == m_selected_hold) {
 						// Draw background highlight
 						Shape highlight = new Ellipse2D.Double(circle_pos.x, circle_pos.y, circle_size.x, circle_size.y);
 						g2.setStroke(new BasicStroke(lineWidth + 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
@@ -265,10 +264,17 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				transformed_corners.add(transformBoardToRender(corner));
 			}
 			for (int i = 0; i < transformed_corners.size(); i++) {
-//				g2.drawRect(
-//						(int)corners.get(i).x,
-//						(int)corners.get(i).y,
-//						5, 5);
+				if (i == m_corner_index_dragging) {
+					g2.setColor(Color.WHITE);
+				}
+				int corner_size = 15;
+				g2.fillRect(
+						(int)(transformed_corners.get(i).x - (corner_size / 2.0)),
+						(int)(transformed_corners.get(i).y - (corner_size / 2.0)),
+						corner_size, corner_size);
+				if (i == m_corner_index_dragging) {
+					g2.setColor(Color.BLACK);
+				}
 				if (i == 0) {
 					if (transformed_corners.size() == 4) {
 						// We have all 4 corners, so connect 0 to 3
@@ -290,7 +296,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			}
 		}
 
-		if (m_state == AppState.LOWEST_HAND_HOLD_SET) {
+		if (m_state == BoardPanelState.LOWEST_HAND_HOLD_SET) {
 			// Show previous lowest
 			int lowest_y = (int)m_board_save.m_board.getLowestAllowedHandHoldHeight();
 			g2.setColor(new Color(64,201,92));
@@ -300,7 +306,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			g2.drawLine(0, (int)m_mouse_position.y,(int)m_board_save.m_board.getBoardWidth(), (int)m_mouse_position.y );
 		}
 		
-		if (m_state == AppState.BOARD_STATS_UP) {
+		if (m_state == BoardPanelState.BOARD_STATS_UP) {
 		    super.paintComponents(g);
 		}
 	}
@@ -330,9 +336,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			deleteSelectedHold();
 		} else if (Objects.equals(e.getActionCommand(), "GenerateHeatmap")) {
 			generateHeatmap();
-		} else if (Objects.equals(e.getActionCommand(), "SetCorners")) {
-			m_board_save.m_board.clearCorners();
-			setCornerSetState();
+		} else if (Objects.equals(e.getActionCommand(), "MoveCorners")) {
+			flipCornerMoveState();
 		} else if (Objects.equals(e.getActionCommand(), "GenerateHold")) {
 			generateHold();
 			//// Something
@@ -458,12 +463,12 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void showHoldStats() {
-		if (m_state != AppState.BOARD_STATS_UP) {
+		if (m_state != BoardPanelState.BOARD_STATS_UP) {
 			add(m_side_panel.m_board_stats.m_hold_type_chart);
-			m_state = AppState.BOARD_STATS_UP;			
+			m_state = BoardPanelState.BOARD_STATS_UP;
 		} else {
 			remove(m_side_panel.m_board_stats.m_hold_type_chart);
-			m_state = AppState.WAITING;
+			m_state = BoardPanelState.WAITING;
 		}
 	}
 	
@@ -608,12 +613,17 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				new_width, 
 				new_height);
 		m_board_save.m_board.setBoardDimensions(new_width, new_height);
-		if (m_board_save.m_board.areAllCornersSet()) {
-			setWaitingState();
-		} else {
-			setCornerSetState();
-		}
+		setDefaultBoardCorners(new Vector2(new_width, new_height));
+		setWaitingState();
 		repaint();
+	}
+
+	private void setDefaultBoardCorners(Vector2 board_size) {
+		Vector2 margin = new Vector2(board_size.x * 0.2, board_size.y * 0.2);
+		m_board_save.m_board.addCorner(margin);
+		m_board_save.m_board.addCorner(new Vector2(board_size.x - margin.x, margin.y));
+		m_board_save.m_board.addCorner(new Vector2(board_size.x - margin.x, board_size.y - margin.y));
+		m_board_save.m_board.addCorner(new Vector2(margin.x, board_size.y - margin.y));
 	}
 	
 	private boolean openSavedBoard(File f) throws IOException, ClassNotFoundException {
@@ -631,11 +641,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			MainWindow.m_frame.setSize(
 					(int)m_board_save.m_board.getBoardWidth(), 
 					(int)m_board_save.m_board.getBoardHeight());
-			if (m_board_save.m_board.areAllCornersSet()) {
-				setWaitingState();
-			} else {
-				setCornerSetState();
-			}
+			setWaitingState();
 			m_current_loaded_board_file = f;
 			m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 			repaint();
@@ -655,7 +661,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	
 	private void deselectHold() {
 		m_selected_hold = null;
-		m_state = AppState.WAITING;
+		m_state = BoardPanelState.WAITING;
 		m_side_panel.m_hold_selection_settings.disableAll();
 	}
 	
@@ -699,7 +705,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	private void selectHold(Hold h) {
 		m_selected_hold = h;
 		m_side_panel.m_hold_selection_settings.selectHold(m_selected_hold);
-		m_state = AppState.HOLD_SELECTED;
+		m_state = BoardPanelState.HOLD_SELECTED;
 	}
 		
 	private void tryClick(double x, double y) {
@@ -723,12 +729,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					}
 				}
 			}
-			case CORNER_SET -> {
-				m_board_save.m_board.addCorner(new Vector2(x, y));
-				if (m_board_save.m_board.areAllCornersSet()) {
-					setWaitingState();
-				}
-			}
 			case LOWEST_HAND_HOLD_SET -> {
 				m_board_save.m_board.setLowestAllowedHandHoldHeight(y);
 				setWaitingState();
@@ -739,17 +739,21 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
     }
 
 	private void setLowestHandHoldState() {
-		m_state = AppState.LOWEST_HAND_HOLD_SET;
+		m_state = BoardPanelState.LOWEST_HAND_HOLD_SET;
 		m_instruction_panel.setText("Set the lowest position on the board that is acceptable for a hand hold");
 	}
 
-	private void setCornerSetState() {
-		m_state = AppState.CORNER_SET;
-		m_instruction_panel.setText("The corners of the board need to be located, click on the corners in clockwise order.");
+	private void flipCornerMoveState() {
+		if (m_state == BoardPanelState.WAITING) {
+			m_state = BoardPanelState.CORNER_MOVE;
+			m_instruction_panel.setText("Move the corners to match the edges of your board");
+		} else if (m_state == BoardPanelState.CORNER_MOVE) {
+			setWaitingState();
+		}
 	}
 	
 	private void setWaitingState() {
-		m_state = AppState.WAITING;
+		m_state = BoardPanelState.WAITING;
 		m_instruction_panel.setText("Click anywhere to add a hold, or click on an existing hold to edit.");
 	}
 
@@ -784,7 +788,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			Vector2 click_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
 			if (e.getButton() == 1) {
 				// Primary click
-				if (m_state == AppState.HOLD_SELECTED) {
+				if (m_state == BoardPanelState.HOLD_SELECTED) {
 					if (m_side_panel.m_hold_selection_settings.getNewHold().contains(click_pos.x, click_pos.y)) {
 						m_drag_state = DragState.DIRECTION_DRAG;
 					} else {
@@ -792,9 +796,15 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 						m_drag_state = DragState.LOCATION_DRAG;
 						m_hold_original_pos = m_side_panel.m_hold_selection_settings.getHoldPosition();
 					}
+				} else if (m_state == BoardPanelState.CORNER_MOVE) {
+					m_mouse_position = click_pos;
+					m_corner_index_dragging = m_board_save.m_board.getNearestCornerIndex(click_pos);
+					// Repurposing m_hold_original_pos like a heathen
+					m_hold_original_pos = m_board_save.m_board.getCorners().get(m_corner_index_dragging);
+					m_drag_state = DragState.CORNER_DRAG;
 				}
-			} else if (e.getButton() == 2) {
-				// Middle click
+			} else if (e.getButton() == 2 || e.getButton() == 3 ) {
+				// Middle click or right click
 				m_mouse_position = click_pos;
 				m_previous_render_offset = new Vector2(m_render_offset);
 				m_drag_state = DragState.PANNING_DRAG;
@@ -802,8 +812,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		}
         @Override
         public void mouseReleased(MouseEvent e) {
-        	if (m_state == AppState.HOLD_SELECTED) {
+        	if (m_state == BoardPanelState.HOLD_SELECTED) {
 				m_drag_state = DragState.NO_DRAG;
+				m_corner_index_dragging = -1;
         	}
         }
 
@@ -849,7 +860,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				case LOCATION_DRAG -> {
 					Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
 					Vector2 mouse_movement = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
-					//System.out.println("(" + mouse_movement.x + ", " + mouse_movement.y + ")");
 					Vector2 new_pos = new Vector2(
 							m_hold_original_pos.x + mouse_movement.x,
 							m_hold_original_pos.y + mouse_movement.y);
@@ -867,10 +877,21 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					m_render_offset = new Vector2(
 							m_previous_render_offset.x + mouse_pos.x - m_mouse_position.x,
 							m_previous_render_offset.y + mouse_pos.y - m_mouse_position.y);
-					//					System.out.print("Mouse movement ");
-//					mouse_movement.print();
 					capRenderOffsetByMax();
 					repaint();
+				}
+				case CORNER_DRAG -> {
+					if (0 < m_corner_index_dragging && m_corner_index_dragging < 4) {
+						Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+						Vector2 mouse_movement = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
+						// Repurposing m_hold_original_pos like a heathen, here it just represents the original position
+						// of the corner
+						Vector2 new_pos = new Vector2(
+								m_hold_original_pos.x + mouse_movement.x,
+								m_hold_original_pos.y + mouse_movement.y);
+						m_board_save.m_board.moveCorner(m_corner_index_dragging, new_pos);
+						repaint();
+					}
 				}
 			}
         }
@@ -878,7 +899,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
         @Override
         public void mouseMoved(MouseEvent e) {
         	//System.out.println("Clicked x:" + e.getX() + " y: " + e.getY());
-			if (m_state == AppState.LOWEST_HAND_HOLD_SET) {
+			if (m_state == BoardPanelState.LOWEST_HAND_HOLD_SET) {
 				m_mouse_position = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
 				repaint();
 			}
@@ -919,7 +940,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		if (m_state == AppState.HOLD_SELECTED) {			
+		if (m_state == BoardPanelState.HOLD_SELECTED) {
 			if (e.getKeyCode() == KeyEvent.VK_DELETE &&  e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
 				deleteSelectedHold();
 				repaint();
@@ -931,7 +952,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		/// Ctrl + S
 		int onmask = KeyEvent.CTRL_DOWN_MASK;
 		if (e.getKeyCode() == KeyEvent.VK_S && (e.getModifiersEx() & (onmask)) == onmask) {
-			if (m_state == AppState.HOLD_SELECTED) {
+			if (m_state == BoardPanelState.HOLD_SELECTED) {
 				saveSelectedHold();
 				repaint();
 			} else {
