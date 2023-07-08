@@ -1,5 +1,6 @@
 package boardanalyzer.board_logic;
 
+import boardanalyzer.BoardPanel;
 import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 
@@ -14,8 +15,21 @@ public class Board implements Serializable {
 	/**
 	 * 
 	 */
+	public static ArrayList<Hold> transformHolds(ArrayList<Hold> holds, PerspectiveTransform t) {
+		ArrayList<Hold> transformed_holds = new ArrayList<>();
+		for (Hold hold : holds) {
+			Vector2 new_pos = hold.position().transformBy(t);
+			Hold flat_hold =
+					new Hold(new_pos,
+							new Vector2(hold.size()),
+							hold.direction());
+			flat_hold.addTypes(hold.getTypes());
+			transformed_holds.add(flat_hold);
+		}
+		return transformed_holds;
+	}
 	private static final long serialVersionUID = 1L;
-	private ArrayList<Hold> m_holds;
+	protected ArrayList<Hold> m_holds;
 	// Hold positions are stored in image space
 	// This is probably not a good idea
 	private ArrayList<Vector2> m_board_corners;
@@ -27,6 +41,10 @@ public class Board implements Serializable {
 		m_board_corners = new ArrayList<Vector2>();
 		m_board_size = new Vector2();
 		m_hand_hold_lowest_y_val = 0;
+	}
+
+	public void transformAllHoldsBy(PerspectiveTransform transform) {
+		m_holds = transformHolds(m_holds, transform);
 	}
 
 	public double getLowestAllowedHandHoldHeightNoDefault() {
@@ -73,6 +91,14 @@ public class Board implements Serializable {
 	
 	public ArrayList<Vector2> getCorners() {
 		return m_board_corners;
+	}
+
+	public ArrayList<Vector2> getClonedCorners() {
+		ArrayList<Vector2> copy = new ArrayList<>();
+		for (Vector2 corner : m_board_corners) {
+			copy.add(new Vector2(corner));
+		}
+		return copy;
 	}
 	
 	public void addHold(Hold h) {

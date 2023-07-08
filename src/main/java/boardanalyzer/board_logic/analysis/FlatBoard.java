@@ -39,38 +39,14 @@ public final class FlatBoard extends Board {
         setLowestAllowedHandHoldHeight(lowest_height);
 
         ArrayList<Hold> old_holds = b.getHolds();
-        for (Hold h : old_holds) {
-            Vector2 new_pos = toFlat(
-                    new Vector2(h.position().x, h.position().y));
-            Vector2 old_size_pos = BoardPanel.getPointOnCircleFromRad(h.direction(), h.getCentrePoint(), h.size());
-            Vector2 new_size_pos = toFlat(old_size_pos);
-
-            Vector2 new_direction_size_vector = new Vector2(
-                    new_size_pos.x - new_pos.x, new_size_pos.y - new_pos.y
-            );
-
-            double old_size_ratio = h.size().x / h.size().y;
-
-            Hold flat_hold =
-                    new Hold(new_pos,
-                            new Vector2(old_size_ratio * new_direction_size_vector.length(), new_direction_size_vector.length()),
-                            h.direction());
-            flat_hold.addTypes(h.getTypes());
-            addHold(flat_hold);
-        }
+        m_holds = transformHolds(old_holds, m_to_flat);
     }
 
     public Vector2 toFlat(Vector2 point) {
-        Point2D.Double in = point.toPoint2D();
-        Point2D.Double out = new Point2D.Double();
-        m_to_flat.transform(in, out);
-        return new Vector2(out);
+        return point.transformBy(m_to_flat);
     }
 
     public Vector2 fromFlat(Vector2 point) {
-        Point2D.Double in = point.toPoint2D();
-        Point2D.Double out = new Point2D.Double();
-        m_from_flat.transform(in, out);
-        return new Vector2(out);
+        return point.transformBy(m_from_flat);
     }
 }

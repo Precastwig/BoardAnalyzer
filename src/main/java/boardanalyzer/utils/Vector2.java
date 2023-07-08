@@ -179,16 +179,23 @@ public class Vector2 implements Serializable {
         
         return (val > 0) ? 1 : 2;
     }
-    
+
+    public Vector2 transformBy(PerspectiveTransform t) {
+        Point2D.Double in = toPoint2D();
+        Point2D.Double out = new Point2D.Double();
+        t.transform(in, out);
+        return new Vector2(out);
+    }
+
     public static void main(String[] args) {
-    	Vector2 res = Vector2.intersectInfiniteLines(
+        Vector2 res = Vector2.intersectInfiniteLines(
     			new Vector2(0,0), 
     			new Vector2(5,2), 
     			new Vector2(10,0), 
     			new Vector2(3,-1));
-    	res.print();
-    	
-    	Vector2 left = new Vector2(-1,1);
-    	System.out.println(left.isLeft(new Vector2(0, 0 ), new Vector2(-1,0)));
+        res.print();
+
+        Vector2 left = new Vector2(-1,1);
+        System.out.println(left.isLeft(new Vector2(0, 0 ), new Vector2(-1,0)));
     }
 }

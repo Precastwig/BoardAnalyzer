@@ -38,11 +38,8 @@ Since the program is changing quite often, I won't go into details but the jist 
     - Improve efficiency of heatmap generation (do something like quadtree for raytracing (Is it called Kd-tree?))
     - Visualize heatmap overlay on board and add button to hide/show
 - Major features:
+    - Figure out how to alter the hold size during perspective shift in a way that is reversable
     - Add Suggestions for holds to REMOVE
-    - Add ability to upload a new image for the same board
-        - Upload new image
-        - Pick new corners
-        - Translate all points based upon new corner positions
     - Allow dragging hold into ellipses, and fix underlying analysis to work with ellipses (tricksy, lots of math involved)
     - Add route creation/saving (Not really the point of this app)
         - Add hold suggestion during route creation

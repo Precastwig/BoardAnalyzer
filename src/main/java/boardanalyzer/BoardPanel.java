@@ -1,10 +1,12 @@
 package boardanalyzer;
 
+import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.BoardSave;
 import boardanalyzer.board_logic.Hold;
 import boardanalyzer.board_logic.analysis.HeatmapGenerator;
 import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
+import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 
 import javax.imageio.ImageIO;
@@ -51,7 +53,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	}
 	private DragState m_drag_state;
 	private int m_corner_index_dragging;
-	private Vector2 m_hold_original_pos;
+	private Vector2 m_hold_pos_original;
+	private ArrayList<Vector2> m_board_corners_original;
 	private double m_board_zoom_factor;
 	private Vector2 m_previous_render_offset; // For use while dragging is happening
 	private Vector2 m_max_render_offset;
@@ -70,6 +73,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_board_zoom_factor = 1.0;
 		m_max_render_offset = new Vector2(0,0);
 		m_render_offset = new Vector2();
+		m_board_corners_original = new ArrayList<Vector2>();
 
 		m_file_chooser = new JFileChooser();
 		m_file_chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -351,8 +355,18 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			suggestHoldDirection();
 		} else if (Objects.equals(e.getActionCommand(), "SetLowestHandHoldHeight")) {
 			setLowestHandHoldHeight();
+		} else if (Objects.equals(e.getActionCommand(), "UpdateBoardImage")) {
+			updateBoardImage();
 		}
 		m_side_panel.m_board_stats.updateLabels(m_board_save.m_board); // Inefficient, but covers our bases
+		repaint();
+	}
+
+	private void updateBoardImage() {
+		openImageOpenDialogAndSetImage();
+		flipCornerMoveState();
+		m_side_panel.m_board_settings.setMoveHoldsWithCorners(true);
+		m_side_panel.m_board_settings.setMovingCornersUI(true);
 		repaint();
 	}
 
@@ -450,7 +464,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 		m_side_panel.m_board_settings.setBoardDimensions(size_input.getBoardSize());
-		if (openFileOpenerDialogAndOpenFile()) {
+		if (openImageOpenDialogAndSetImage()) {
 			saveBoard(m_current_loaded_board_file);
 		}
 	}
@@ -555,7 +569,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		m_board_save.m_hold_direction_ratio = m_side_panel.m_board_settings.getHoldDirectionRatio();
 	}
 	
-	private boolean openFileOpenerDialogAndOpenFile() {
+	private boolean openImageOpenDialogAndSetImage() {
 		m_file_chooser.setFileFilter(new FileNameExtensionFilter("JPG and PNG images", "jpeg", "jpg", "png"));
 		int returnVal = m_file_chooser.showDialog(this, "Open Image");
 
@@ -794,14 +808,17 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					} else {
 						m_mouse_position = click_pos;
 						m_drag_state = DragState.LOCATION_DRAG;
-						m_hold_original_pos = m_side_panel.m_hold_selection_settings.getHoldPosition();
+						m_hold_pos_original = m_side_panel.m_hold_selection_settings.getHoldPosition();
 					}
 				} else if (m_state == BoardPanelState.CORNER_MOVE) {
 					m_mouse_position = click_pos;
 					m_corner_index_dragging = m_board_save.m_board.getNearestCornerIndex(click_pos);
 					// Repurposing m_hold_original_pos like a heathen
-					m_hold_original_pos = new Vector2(m_board_save.m_board.getCorners().get(m_corner_index_dragging));
+					m_hold_pos_original = new Vector2(m_board_save.m_board.getCorners().get(m_corner_index_dragging));
 					m_drag_state = DragState.CORNER_DRAG;
+					if (m_side_panel.m_board_settings.moveHoldsWithCorners()) {
+						m_board_corners_original = m_board_save.m_board.getClonedCorners();
+					}
 				}
 			} else if (e.getButton() == 2 || e.getButton() == 3 ) {
 				// Middle click or right click
@@ -814,6 +831,20 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
         public void mouseReleased(MouseEvent e) {
 			m_drag_state = DragState.NO_DRAG;
 			m_corner_index_dragging = -1;
+			if (m_side_panel.m_board_settings.moveHoldsWithCorners() && m_board_corners_original.size() == 4) {
+				ArrayList<Vector2> new_corners = m_board_save.m_board.getCorners();
+				PerspectiveTransform old_to_new_corners = PerspectiveTransform.getQuadToQuad(
+						m_board_corners_original.get(0).x,m_board_corners_original.get(0).y,
+						m_board_corners_original.get(1).x,m_board_corners_original.get(1).y,
+						m_board_corners_original.get(2).x,m_board_corners_original.get(2).y,
+						m_board_corners_original.get(3).x,m_board_corners_original.get(3).y,
+						new_corners.get(0).x, new_corners.get(0).y,
+						new_corners.get(1).x, new_corners.get(1).y,
+						new_corners.get(2).x, new_corners.get(2).y,
+						new_corners.get(3).x, new_corners.get(3).y
+				);
+				m_board_save.m_board.transformAllHoldsBy(old_to_new_corners);
+			}
 			repaint();
         }
 
@@ -860,8 +891,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
 					Vector2 mouse_movement = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
 					Vector2 new_pos = new Vector2(
-							m_hold_original_pos.x + mouse_movement.x,
-							m_hold_original_pos.y + mouse_movement.y);
+							m_hold_pos_original.x + mouse_movement.x,
+							m_hold_pos_original.y + mouse_movement.y);
 					m_side_panel.m_hold_selection_settings.setPosition(new_pos);
 					repaint();
 				}
@@ -888,8 +919,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					// Repurposing m_hold_original_pos like a heathen, here it just represents the original position
 					// of the corner
 					Vector2 new_pos = new Vector2(
-							m_hold_original_pos.x + mouse_movement.x,
-							m_hold_original_pos.y + mouse_movement.y);
+							m_hold_pos_original.x + mouse_movement.x,
+							m_hold_pos_original.y + mouse_movement.y);
 					m_board_save.m_board.moveCorner(m_corner_index_dragging, new_pos);
 					repaint();
 				}
