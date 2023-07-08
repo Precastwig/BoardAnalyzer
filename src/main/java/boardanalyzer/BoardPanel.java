@@ -800,7 +800,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					m_mouse_position = click_pos;
 					m_corner_index_dragging = m_board_save.m_board.getNearestCornerIndex(click_pos);
 					// Repurposing m_hold_original_pos like a heathen
-					m_hold_original_pos = m_board_save.m_board.getCorners().get(m_corner_index_dragging);
+					m_hold_original_pos = new Vector2(m_board_save.m_board.getCorners().get(m_corner_index_dragging));
 					m_drag_state = DragState.CORNER_DRAG;
 				}
 			} else if (e.getButton() == 2 || e.getButton() == 3 ) {
@@ -812,10 +812,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		}
         @Override
         public void mouseReleased(MouseEvent e) {
-        	if (m_state == BoardPanelState.HOLD_SELECTED) {
-				m_drag_state = DragState.NO_DRAG;
-				m_corner_index_dragging = -1;
-        	}
+			m_drag_state = DragState.NO_DRAG;
+			m_corner_index_dragging = -1;
+			repaint();
         }
 
         @Override
@@ -881,17 +880,18 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					repaint();
 				}
 				case CORNER_DRAG -> {
-					if (0 < m_corner_index_dragging && m_corner_index_dragging < 4) {
-						Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
-						Vector2 mouse_movement = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
-						// Repurposing m_hold_original_pos like a heathen, here it just represents the original position
-						// of the corner
-						Vector2 new_pos = new Vector2(
-								m_hold_original_pos.x + mouse_movement.x,
-								m_hold_original_pos.y + mouse_movement.y);
-						m_board_save.m_board.moveCorner(m_corner_index_dragging, new_pos);
-						repaint();
+					if (m_corner_index_dragging < 0 || 3 < m_corner_index_dragging) {
+						return;
 					}
+					Vector2 mouse_pos = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
+					Vector2 mouse_movement = new Vector2(mouse_pos.x - m_mouse_position.x, mouse_pos.y - m_mouse_position.y);
+					// Repurposing m_hold_original_pos like a heathen, here it just represents the original position
+					// of the corner
+					Vector2 new_pos = new Vector2(
+							m_hold_original_pos.x + mouse_movement.x,
+							m_hold_original_pos.y + mouse_movement.y);
+					m_board_save.m_board.moveCorner(m_corner_index_dragging, new_pos);
+					repaint();
 				}
 			}
         }
