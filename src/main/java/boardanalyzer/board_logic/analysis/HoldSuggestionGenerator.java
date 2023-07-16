@@ -63,6 +63,12 @@ public class HoldSuggestionGenerator extends Analyzer {
     private Vector2 suggestHoldLocationForType(FlatBoard b, Hold.Type type) {
         ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
 
+        if (type == Hold.Type.FOOT) {
+            new_locs.removeIf(
+                    v -> (v.y < b.getBoardHeight() / 2)
+            );
+        }
+
         Vector2 return_position = new_locs.get(0); // default
         int least_holds_of_type_in_proximity = Integer.MAX_VALUE;
         double furthest_hold_of_type = 0;

@@ -853,7 +853,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			switch(m_drag_state) {
 				case DIRECTION_DRAG -> {
 					m_mouse_position = transformRenderToBoard(new Vector2(e.getX(), e.getY()));
-					Vector2 circle_centre = m_selected_hold.getCentrePoint();
+					Vector2 circle_centre = m_side_panel.m_hold_selection_settings.getHoldCentrePoint();
 
 					int mouse_vector_x = (int) (m_mouse_position.x - circle_centre.x);
 					int mouse_vector_y = (int) (m_mouse_position.y - circle_centre.y);

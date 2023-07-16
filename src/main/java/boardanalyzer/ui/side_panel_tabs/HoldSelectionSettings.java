@@ -128,6 +128,10 @@ public class HoldSelectionSettings extends BorderedPanel {
 		return m_new_hold.position();
 	}
 
+	public Vector2 getHoldCentrePoint() {
+		return m_new_hold.getCentrePoint();
+	}
+
 	public Hold getNewHold() {return m_new_hold;};
 	
 	public void setToHoldType(Hold.Type type) {

@@ -13,6 +13,7 @@ import javax.swing.*;
 
 public class HoldGenerationSettings extends BorderedPanel implements ItemListener {
 	JCheckBox m_least_common_hold_checkbox;
+	JCheckBox m_ignore_feet_checkbox;
 	JComboBox<Hold.Type> m_hold_type_selection;
 	JButton m_generate_hold_button;
 	MinMaxHoldSizePanel m_hold_size_pref;
@@ -22,11 +23,13 @@ public class HoldGenerationSettings extends BorderedPanel implements ItemListene
 
 		m_generate_hold_button = new JButton("Generate Hold");
 		m_least_common_hold_checkbox = new JCheckBox("Least Common Hold Type");
+		m_ignore_feet_checkbox = new JCheckBox("Ignore feet");
 		m_hold_type_selection = new JComboBox<Hold.Type>(Hold.Type.values());
 		m_hold_type_selection.setMaximumSize(new Dimension(300,50));
 		JLabel hold_size_label = new JLabel("Hold Size:");
 		m_hold_size_pref = new MinMaxHoldSizePanel();
 
+		m_ignore_feet_checkbox.setAlignmentX(0.5f);
 		m_generate_hold_button.setAlignmentX(0.5f);
 		m_least_common_hold_checkbox.setAlignmentX(0.5f);
 		m_hold_type_selection.setAlignmentX(0.5f);
@@ -37,6 +40,7 @@ public class HoldGenerationSettings extends BorderedPanel implements ItemListene
 
 		m_least_common_hold_checkbox.addItemListener(this);
 
+		add(m_ignore_feet_checkbox);
 		add(m_least_common_hold_checkbox);
 		add(m_hold_type_selection);
 		add(Box.createVerticalStrut(25));
