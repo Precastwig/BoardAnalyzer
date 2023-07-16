@@ -2,7 +2,7 @@ package boardanalyzer.ui.basic_elements;
 
 import boardanalyzer.ui.basic_elements.BarWithButtons;
 
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -13,17 +13,46 @@ public class PercentageChooser<Type> extends JPanel implements ActionListener {
 	private final ArrayList<BarWithButtons> m_bars;
 	private final Type[] m_all_types;
 	public PercentageChooser(Type[] values) {
-		m_bars = new ArrayList<BarWithButtons>();
+		setLayout(new GridBagLayout());
+		GridBagConstraints constraint = new GridBagConstraints();
+		m_bars = new ArrayList<>();
 		m_all_types = values;
+		constraint.gridy = 0;
+		constraint.fill = GridBagConstraints.HORIZONTAL;
 		for (Type type : m_all_types) {
 			BarWithButtons bwb = new BarWithButtons(type.toString());
-			bwb.setAlignmentX(0f);
 			bwb.m_plus_button.addActionListener(this);
 			bwb.m_minus_button.addActionListener(this);
 			m_bars.add(bwb);
-			add(bwb);
+
+			constraint.gridwidth = 1;
+			constraint.gridx = 2;
+			constraint.weightx = 0.5;
+			constraint.anchor = GridBagConstraints.CENTER;
+			add(bwb.m_label, constraint);
+
+			constraint.gridwidth = 1;
+			constraint.gridy++;
+			constraint.gridx = 0;
+			constraint.weightx = 0.1;
+			constraint.anchor = GridBagConstraints.PAGE_START;
+			add(bwb.m_minus_button, constraint);
+
+			constraint.weightx = 1.0;
+			constraint.gridx = 1;
+			constraint.gridwidth = 3;
+			constraint.anchor = GridBagConstraints.CENTER;
+			add(bwb.m_bar, constraint);
+
+			constraint.gridx = 4;
+			constraint.gridwidth = 1;
+			constraint.weightx = 0.1;
+			constraint.anchor = GridBagConstraints.PAGE_END;
+			add(bwb.m_plus_button, constraint);
+
+			constraint.gridy++;
 		}
-		setPreferredSize(new Dimension(0, m_all_types.length * (BarWithButtons.BUTTON_SIZE + 5)));
+		//setPreferredSize(new Dimension(0, m_all_types.length * (BarWithButtons.BUTTON_SIZE + 5)));
 		updateBarPercentages();
 	}
 	

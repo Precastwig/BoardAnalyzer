@@ -11,7 +11,7 @@ public class PercentageVisualiser<Type> extends JPanel {
     public PercentageVisualiser(Type[] values) {
         setLayout(new GridBagLayout());
         GridBagConstraints constraint = new GridBagConstraints();
-        m_bars = new ArrayList<JProgressBar>();
+        m_bars = new ArrayList<>();
         m_all_types = values;
         constraint.gridy = 0;
         constraint.fill = GridBagConstraints.HORIZONTAL;
@@ -34,7 +34,7 @@ public class PercentageVisualiser<Type> extends JPanel {
 
             //b.add(Box.createHorizontalGlue());
 //            add(b);
-            constraint.gridy = constraint.gridy + 1;
+            constraint.gridy++;
         }
     }
 
