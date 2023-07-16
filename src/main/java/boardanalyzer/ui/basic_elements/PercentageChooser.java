@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import javax.swing.JPanel;
 
 public class PercentageChooser<Type> extends JPanel implements ActionListener {
-	private ArrayList<BarWithButtons> m_bars;
-	private Type[] m_all_types;
+	private final ArrayList<BarWithButtons> m_bars;
+	private final Type[] m_all_types;
 	public PercentageChooser(Type[] values) {
 		m_bars = new ArrayList<BarWithButtons>();
 		m_all_types = values;
