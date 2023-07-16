@@ -1,6 +1,7 @@
 package boardanalyzer.ui.side_panel_tabs;
 
 import boardanalyzer.board_logic.Hold;
+import boardanalyzer.ui.basic_elements.BorderedPanel;
 import boardanalyzer.ui.side_panel_tabs.elements.MinMaxHoldSizePanel;
 
 import java.awt.*;
@@ -10,20 +11,19 @@ import java.awt.event.ItemListener;
 
 import javax.swing.*;
 
-public class HoldGenerationSettings extends JPanel implements ItemListener {
+public class HoldGenerationSettings extends BorderedPanel implements ItemListener {
 	JCheckBox m_least_common_hold_checkbox;
 	JComboBox<Hold.Type> m_hold_type_selection;
 	JButton m_generate_hold_button;
 	MinMaxHoldSizePanel m_hold_size_pref;
 	
 	public HoldGenerationSettings(int width) {
-		setLayout(new BorderLayout());
-		JPanel inner_panel = new JPanel();
-		inner_panel.setLayout(new BoxLayout(inner_panel, BoxLayout.PAGE_AXIS));
+		setToBoxLayout();
 
 		m_generate_hold_button = new JButton("Generate Hold");
 		m_least_common_hold_checkbox = new JCheckBox("Least Common Hold Type");
 		m_hold_type_selection = new JComboBox<Hold.Type>(Hold.Type.values());
+		m_hold_type_selection.setMaximumSize(new Dimension(300,50));
 		JLabel hold_size_label = new JLabel("Hold Size:");
 		m_hold_size_pref = new MinMaxHoldSizePanel();
 
@@ -37,17 +37,14 @@ public class HoldGenerationSettings extends JPanel implements ItemListener {
 
 		m_least_common_hold_checkbox.addItemListener(this);
 
-		inner_panel.add(m_least_common_hold_checkbox);
-		inner_panel.add(m_hold_type_selection);
-		inner_panel.add(Box.createVerticalGlue());
-		inner_panel.add(hold_size_label);
-		inner_panel.add(m_hold_size_pref);
-		inner_panel.add(m_generate_hold_button);
-		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.WEST);
-		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.EAST);
-		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.NORTH);
-		add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.SOUTH);
-		add(inner_panel, BorderLayout.CENTER);
+		add(m_least_common_hold_checkbox);
+		add(m_hold_type_selection);
+		add(Box.createVerticalStrut(25));
+		add(hold_size_label);
+		add(m_hold_size_pref);
+		add(Box.createVerticalStrut(25));
+		add(m_generate_hold_button);
+		add(Box.createVerticalGlue());
 	}
 
 	public void addActionListener(ActionListener listener) {
