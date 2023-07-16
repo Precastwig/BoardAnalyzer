@@ -108,6 +108,16 @@ public class Board implements Serializable {
 	public ArrayList<Hold> getHolds() {
 		return m_holds;
 	}
+
+	public ArrayList<Hold> getHoldsInRange(Vector2 position, double range) {
+		ArrayList<Hold> holds_in_range = new ArrayList<>();
+		for (Hold h : m_holds) {
+			if (position.distanceTo(h.position()) < range) {
+				holds_in_range.add(h);
+			}
+		}
+		return holds_in_range;
+	}
 	
 	public void removeHold(Hold h) {
 		m_holds.remove(h);

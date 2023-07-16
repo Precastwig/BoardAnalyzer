@@ -200,6 +200,10 @@ public class Hold implements Serializable{
 	public HashSet<Type> getTypes() {
 		return m_types;
 	}
+
+	public void clearTypes() {
+		m_types.clear();
+	}
 	
 	public void addTypes(HashSet<Type> hold_types) {
 		m_types.addAll(hold_types);

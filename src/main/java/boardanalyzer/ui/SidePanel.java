@@ -1,5 +1,7 @@
 package boardanalyzer.ui;
 
+import boardanalyzer.ui.side_panel_tabs.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;

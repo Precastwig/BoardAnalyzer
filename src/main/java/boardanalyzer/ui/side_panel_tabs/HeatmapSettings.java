@@ -1,4 +1,4 @@
-package boardanalyzer.ui;
+package boardanalyzer.ui.side_panel_tabs;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -7,8 +7,9 @@ import java.util.HashSet;
 import javax.swing.*;
 
 import boardanalyzer.board_logic.Hold.Type;
+import boardanalyzer.ui.basic_elements.BorderedPanel;
 
-public class HeatmapSettings extends JPanel {
+public class HeatmapSettings extends BorderedPanel {
 	JSlider m_brightness_slider;
 	ArrayList<JCheckBox> m_hold_type_selection;
 	JCheckBox m_hold_type_exact_match;
@@ -16,15 +17,15 @@ public class HeatmapSettings extends JPanel {
 	JButton m_generate_heatmap_button;
 	
 	public HeatmapSettings(int width) {
+		setToBoxLayout();
 		JLabel explanationLabel = new JLabel("<html>This will create a heatmap from the various settings below, if no hold types are selected, all will be used.</html>");
-		add(explanationLabel);
 
 		m_hold_type_exact_match = new JCheckBox("Hold types exactly match");
 		m_hold_direction_checkbox = new JCheckBox("Hold direction matters");
 
 		m_generate_heatmap_button = new JButton("Generate Heatmap");
 		m_generate_heatmap_button.setActionCommand("GenerateHeatmap");
-		m_generate_heatmap_button.setPreferredSize(new Dimension(width, 20));
+//		m_generate_heatmap_button.setPreferredSize(new Dimension(width, 20));
 
 		m_brightness_slider = new JSlider(JSlider.HORIZONTAL, 10, 200, 100);
 		m_brightness_slider.setMajorTickSpacing(50);
@@ -32,6 +33,7 @@ public class HeatmapSettings extends JPanel {
 		m_brightness_slider.setPaintTicks(true);
 		m_brightness_slider.setPaintLabels(true);
 
+		add(explanationLabel);
 		add(m_brightness_slider);
 
 		m_hold_type_selection = new ArrayList<JCheckBox>();

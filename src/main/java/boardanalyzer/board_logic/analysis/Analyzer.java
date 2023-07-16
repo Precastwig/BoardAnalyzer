@@ -76,7 +76,7 @@ abstract public class Analyzer {
 	}
 	
 	protected double getProximityDistance(FlatBoard b) {
-		return Math.min(b.getBoardHeight(), b.getBoardWidth()) / 2;
+		return Math.min(b.getBoardHeight(), b.getBoardWidth()) / 4;
 	}
 	
 	private Vector2 getFlatBoardSize(Vector2 flat_board_ratio) {

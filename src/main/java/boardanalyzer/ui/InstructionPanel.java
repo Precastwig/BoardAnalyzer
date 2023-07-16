@@ -32,6 +32,9 @@ public class InstructionPanel extends JPanel  {
 		m_progress_bar.setPreferredSize(new Dimension(500, 20));
 	}
 
+	public void setError(String s) {
+		m_instruction_label.setText("<html><p style=\"color:#FF0000\";>" + s + "</p></html");
+	}
 	public void setText(String s) {
 		m_instruction_label.setText("<html>" + s + "</html>");
 	}

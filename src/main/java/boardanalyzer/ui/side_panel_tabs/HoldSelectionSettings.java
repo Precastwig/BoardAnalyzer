@@ -1,10 +1,11 @@
-package boardanalyzer.ui;
+package boardanalyzer.ui.side_panel_tabs;
 
 import boardanalyzer.BoardPanel;
 import boardanalyzer.board_logic.Hold;
+import boardanalyzer.ui.basic_elements.BorderedPanel;
 import boardanalyzer.utils.Vector2;
 
-import java.awt.GridLayout;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -12,49 +13,61 @@ import java.util.Iterator;
 
 import javax.swing.*;
 
-public class HoldSelectionSettings extends JPanel {
+public class HoldSelectionSettings extends BorderedPanel {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
-	private JButton m_save_hold_button ;
-	private JButton m_delete_hold_button;
-	private JButton m_suggest_type_button;
-	private JButton m_suggest_direction_button;
-	private JLabel m_direction_label;
-	private JLabel m_size_label;
-	private Hold m_new_hold;
+	private final JButton m_save_hold_button ;
+	private final JButton m_delete_hold_button;
+	private final JButton m_suggest_type_button;
+	private final JButton m_suggest_direction_button;
+	private final JLabel m_direction_label;
+	private final JLabel m_size_label;
+	private final Hold m_new_hold;
 	public HoldSelectionSettings() {
-		super(new GridLayout(9, 1));
-		m_hold_type_checkboxes = new ArrayList<JCheckBox>();
+		setToBoxLayout();
+//		JPanel hold_type_panel = new JPanel();
+		m_hold_type_checkboxes = new ArrayList<>();
+		m_new_hold = new Hold();
+		m_direction_label = new JLabel("Direction: --");
+		m_size_label = new JLabel("Size: --");
+		m_save_hold_button = new JButton("Save hold");
+		m_delete_hold_button = new JButton("Delete hold");
+		m_suggest_type_button = new JButton("Suggest type");
+		m_suggest_direction_button = new JButton("Suggest direction");
+
+		m_suggest_direction_button.setActionCommand("SuggestHoldDirection");
+		m_suggest_type_button.setActionCommand("SuggestHoldType");
+		m_delete_hold_button.setActionCommand("DeleteHold");
+		m_save_hold_button.setActionCommand("SaveHold");
+
+//		hold_type_panel.setAlignmentX(0.5f);
+		m_direction_label.setAlignmentX(0.5f);
+		m_size_label.setAlignmentX(0.5f);
+		m_save_hold_button.setAlignmentX(0.5f);
+		m_delete_hold_button.setAlignmentX(0.5f);
+		m_suggest_type_button.setAlignmentX(0.5f);
+		m_suggest_direction_button.setAlignmentX(0.5f);
+
+
 		for (Hold.Type hold : Hold.Type.values()) {
+			Box b = Box.createHorizontalBox();
 			JCheckBox cb = new JCheckBox(hold.toString());
 			m_hold_type_checkboxes.add(cb);
-			add(cb);
+//			cb.setAlignmentX(Component.LEFT_ALIGNMENT);
+			b.add(cb);
+			b.add(Box.createHorizontalGlue());
+			add(b);
 		}
 
-		m_new_hold = new Hold();
-		
-		m_direction_label = new JLabel("Direction: --");
+//		add(hold_type_panel);
 		add(m_direction_label);
-		
-		m_size_label = new JLabel("Size: --");
 		add(m_size_label);
-		
-		m_save_hold_button = new JButton("Save hold");
-		m_save_hold_button.setActionCommand("SaveHold");
+		add(Box.createVerticalStrut(20));
 		add(m_save_hold_button);
-
-		m_delete_hold_button = new JButton("Delete hold");
-		m_delete_hold_button.setActionCommand("DeleteHold");
 		add(m_delete_hold_button);
-
-		add(Box.createVerticalGlue());
-
-		m_suggest_type_button = new JButton("Suggest type");
-		m_suggest_type_button.setActionCommand("SuggestHoldType");
+		add(Box.createVerticalStrut(20));
 		add(m_suggest_type_button);
-
-		m_suggest_direction_button = new JButton("Suggest direction");
-		m_suggest_direction_button.setActionCommand("SuggestHoldDirection");
 		add(m_suggest_direction_button);
+		add(Box.createVerticalGlue());
 
 		disableAll();
 	}
@@ -74,8 +87,7 @@ public class HoldSelectionSettings extends JPanel {
 		setPinch(h.isPinch());
 		setFoot(h.isFoot());
 		setDirection(h.direction());
-		setHoldSize(
-				h.size());
+		setHoldSize(h.size());
 		setPosition(h.position());
 		enableAll();
 	}

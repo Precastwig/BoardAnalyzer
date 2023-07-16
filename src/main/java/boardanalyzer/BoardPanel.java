@@ -1,11 +1,11 @@
 package boardanalyzer;
 
-import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.BoardSave;
 import boardanalyzer.board_logic.Hold;
 import boardanalyzer.board_logic.analysis.HeatmapGenerator;
 import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
+import boardanalyzer.ui.side_panel_tabs.elements.BoardSizeInputPanel;
 import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 
@@ -454,6 +454,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				return;
 			}
 		}
+
 		BoardSizeInputPanel size_input = new BoardSizeInputPanel();
 		int choice = JOptionPane.showConfirmDialog(null,
 				size_input,
@@ -464,8 +465,12 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			return;
 		}
 		m_side_panel.m_board_settings.setBoardDimensions(size_input.getBoardSize());
+
 		if (openImageOpenDialogAndSetImage()) {
 			saveBoard(m_current_loaded_board_file);
+			setDefaultBoardCorners(m_board_save.m_board.getBoardSize());
+			setWaitingState();
+			repaint();
 		}
 	}
 	
@@ -503,7 +508,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			selectHold(new_hold.get());
 			m_side_panel.m_board_stats.updateLabels(m_board_save.m_board);
 		} else { 
-			m_instruction_panel.setText("Hold generation failed.");
+			m_instruction_panel.setError("Hold generation failed.");
 		}
 	}
 	
@@ -560,8 +565,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			m_instruction_panel.setText("Board dimensions in non-number format");
 		}
 		try {
-			m_board_save.m_hold_minimum_size = m_side_panel.m_board_settings.getHoldSizeMin();
-			m_board_save.m_hold_maximum_size = m_side_panel.m_board_settings.getHoldSizeMax();
+			m_board_save.m_hold_minimum_size = m_side_panel.m_hold_generation_settings.getHoldSizeMin();
+			m_board_save.m_hold_maximum_size = m_side_panel.m_hold_generation_settings.getHoldSizeMax();
 		} catch (java.lang.NumberFormatException e) {
 			m_instruction_panel.setText("Hold size min/max in non-number format");
 		}
@@ -587,20 +592,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 	}
 	
 	private void openImageFile(File file) throws IOException {
-		if (m_board_save.m_board_image != null) {
-			// We already have an image, which means we should ask if we should 
-			// also clear the save
-			int result = JOptionPane.showConfirmDialog(null, "Board data already exists, Would you like to clear it?");
-			if (result == JOptionPane.YES_OPTION) {
-				// Clear board data
-				m_board_save = new BoardSave();
-			} else if (result == JOptionPane.NO_OPTION) {
-				///// TODO remap the old hold positions and corners to the new image size
-			} else {
-				// Do nothing
-				return;
-			}
-		}
 		FileInputStream fis = new FileInputStream(file);
 		m_board_save.m_board_image = ImageIO.read(fis);
 		if (m_board_save.m_board_image == null) {
@@ -627,9 +618,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 				new_width, 
 				new_height);
 		m_board_save.m_board.setBoardDimensions(new_width, new_height);
-		setDefaultBoardCorners(new Vector2(new_width, new_height));
-		setWaitingState();
-		repaint();
 	}
 
 	private void setDefaultBoardCorners(Vector2 board_size) {
@@ -648,8 +636,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			m_board_save = (BoardSave)oi.readObject();
 			oi.close();
 			m_side_panel.m_board_settings.setBoardDimensions(m_board_save.m_board_dimensions);
-			m_side_panel.m_board_settings.setHoldSizeMin(m_board_save.m_hold_minimum_size);
-			m_side_panel.m_board_settings.setHoldSizeMax(m_board_save.m_hold_maximum_size);
+			m_side_panel.m_hold_generation_settings.setHoldSizeMin(m_board_save.m_hold_minimum_size);
+			m_side_panel.m_hold_generation_settings.setHoldSizeMax(m_board_save.m_hold_maximum_size);
 			m_side_panel.m_board_settings.setHoldTypeRatio(m_board_save.m_hold_type_ratio);
 			m_side_panel.m_board_settings.setHoldDirectionRatio(m_board_save.m_hold_direction_ratio);
 			MainWindow.m_frame.setSize(
@@ -690,7 +678,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			m_instruction_panel.setText("Error! Cannot place hold outside of border");
 			return;
 		}
-
+		m_selected_hold.clearTypes();
 		if (m_side_panel.m_hold_selection_settings.isCrimp()) {
 			m_selected_hold.addType(Hold.Type.CRIMP);
 		}
@@ -831,7 +819,9 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
         public void mouseReleased(MouseEvent e) {
 			m_drag_state = DragState.NO_DRAG;
 			m_corner_index_dragging = -1;
-			if (m_side_panel.m_board_settings.moveHoldsWithCorners() && m_board_corners_original.size() == 4) {
+			if (m_state == BoardPanelState.CORNER_MOVE &&
+					m_side_panel.m_board_settings.moveHoldsWithCorners() &&
+					m_board_corners_original.size() == 4) {
 				ArrayList<Vector2> new_corners = m_board_save.m_board.getCorners();
 				PerspectiveTransform old_to_new_corners = PerspectiveTransform.getQuadToQuad(
 						m_board_corners_original.get(0).x,m_board_corners_original.get(0).y,
@@ -844,6 +834,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 						new_corners.get(3).x, new_corners.get(3).y
 				);
 				m_board_save.m_board.transformAllHoldsBy(old_to_new_corners);
+				m_board_corners_original.clear();
 			}
 			repaint();
         }

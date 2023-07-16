@@ -2,12 +2,11 @@ package boardanalyzer.board_logic.analysis;
 
 import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.Hold;
-import boardanalyzer.ui.HoldGenerationSettings;
+import boardanalyzer.ui.side_panel_tabs.HoldGenerationSettings;
 import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 import org.kynosarges.tektosyne.geometry.*;
 
-import java.lang.reflect.Array;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 
@@ -32,14 +31,67 @@ public class HoldSuggestionGenerator extends Analyzer {
 		m_hold_direction_pref_ratio = hold_direction_pref_ratio;
     }
 
+    private ArrayList<Vector2> cullClosestHalf(FlatBoard b, ArrayList<Vector2> holds) {
+        // Cull the 50% of points that are closest to their nearest hold
+        if (holds.size() < 5) {
+            return holds;
+        }
+        double total_distance = 0;
+        for (Vector2 p : holds) {
+            total_distance += b.getDistanceToNearestHold(p);
+        }
+        double average = total_distance / holds.size();
+        ArrayList<Vector2> culled_list = new ArrayList<Vector2>();
+        for (Vector2 p: holds) {
+            if (b.getDistanceToNearestHold(p) > average) {
+                culled_list.add(p);
+            }
+        }
+        return culled_list;
+    }
+
     private Vector2 suggestHoldLocationImpl(FlatBoard b) {
         ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
-        if (new_locs.size() < 1) {
-            System.out.println("getAllPotentialNewHoldLocations has not generated any locations!");
-        }
+        new_locs = cullClosestHalf(b, new_locs);
+
+        // Choose a random one
         Random r = new Random();
         int index = r.nextInt(new_locs.size());
         return new_locs.get(index);
+    }
+
+    private Vector2 suggestHoldLocationForType(FlatBoard b, Hold.Type type) {
+        ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
+
+        Vector2 return_position = new_locs.get(0); // default
+        int least_holds_of_type_in_proximity = Integer.MAX_VALUE;
+        double furthest_hold_of_type = 0;
+        for (Vector2 loc : new_locs) {
+            ArrayList<Hold> nearby_holds = b.getHoldsInRange(loc, getProximityDistance(b));
+            double closest_distance = Double.POSITIVE_INFINITY;
+            int holds_in_proximity_of_type = 0;
+            for (Hold h : nearby_holds) {
+                if (h.typesContain(type)) {
+                    double h_distance = loc.distanceTo(h.position());
+                    if (h_distance < closest_distance) {
+                        closest_distance = h_distance;
+                    }
+                    holds_in_proximity_of_type += 1;
+                }
+            }
+
+            if (holds_in_proximity_of_type < least_holds_of_type_in_proximity) {
+                least_holds_of_type_in_proximity = holds_in_proximity_of_type;
+
+                return_position = loc;
+            } else if (holds_in_proximity_of_type == least_holds_of_type_in_proximity) {
+                if (closest_distance > furthest_hold_of_type) {
+                    furthest_hold_of_type = closest_distance;
+                }
+
+            }
+        }
+        return return_position;
     }
 
     private Vector2 getRandomValidPosition(FlatBoard b) {
@@ -100,20 +152,10 @@ public class HoldSuggestionGenerator extends Analyzer {
         }
 
         ArrayList<Vector2> potential_locations = getValidVoronoiNewLocations(b);
-
-        // Cull the 50% of points that are closest to their nearest hold
-        double total_distance = 0;
-        for (Vector2 p : potential_locations) {
-            total_distance += b.getDistanceToNearestHold(p);
+        if (potential_locations.size() < 1) {
+            System.out.println("getAllPotentialNewHoldLocations has not generated any locations!");
         }
-        double average = total_distance / potential_locations.size();
-        for (Vector2 p: potential_locations) {
-            if (b.getDistanceToNearestHold(p) > average) {
-                return_list.add(p);
-            }
-        }
-
-        return return_list;
+        return potential_locations;
     }
 
     private boolean checkLocationValid(
@@ -123,7 +165,8 @@ public class HoldSuggestionGenerator extends Analyzer {
         if (b.isOutsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y) ||
             loc.x < min_distance || loc.y < min_distance ||
                 b.getBoardWidth() - loc.x < min_distance ||
-                b.getBoardHeight() - loc.y < min_distance) {
+                b.getBoardHeight() - loc.y < min_distance ||
+                loc.y > b.getLowestAllowedHandHoldHeight()) {
             return false;
         }
         double dist = b.getDistanceToNearestHold(loc);
@@ -253,20 +296,36 @@ public class HoldSuggestionGenerator extends Analyzer {
         return least_filled_direction;
     }
 
-    private HoldGenerationReturnStatus generateLeastCommonTypeHoldImpl(FlatBoard b, Hold new_hold) {
+    private HoldGenerationReturnStatus generateHoldOfType(FlatBoard b, Hold new_hold, Hold.Type type) {
         try {
-            Vector2 new_loc = suggestHoldLocationImpl(b);
-            new_hold.setCentrePoint(new_loc);
-            Hold.Type type = getLeastFilledHoldType(b, new_loc, Hold.Type.getHandTypes());
             new_hold.addType(type);
-            double new_size;
-            new_size = suggestNewHoldSize(b, new_loc);
+            Vector2 new_loc = suggestHoldLocationForType(b, type);
+            new_hold.setCentrePoint(new_loc);
+            double new_size = suggestNewHoldSize(b, new_loc);
             Vector2 new_size_vector = new Vector2(new_size, new_size);
             new_hold.setSize(new_size_vector);
             double new_dir = suggestHoldDirectionImpl(b, new_loc, new_size_vector);
             new_hold.setDirection(new_dir);
         } catch (InvalidAlgorithmParameterException e) {
-            System.out.println(e);
+            e.printStackTrace();
+            return HoldGenerationReturnStatus.FAILURE;
+        }
+        return HoldGenerationReturnStatus.SUCCESS;
+    }
+
+    private HoldGenerationReturnStatus generateLeastCommonTypeHandHoldImpl(FlatBoard b, Hold new_hold) {
+        try {
+            Vector2 new_loc = suggestHoldLocationImpl(b);
+            new_hold.setCentrePoint(new_loc);
+            Hold.Type type = getLeastFilledHoldType(b, new_loc, Hold.Type.getHandTypes());
+            new_hold.addType(type);
+            double new_size = suggestNewHoldSize(b, new_loc);
+            Vector2 new_size_vector = new Vector2(new_size, new_size);
+            new_hold.setSize(new_size_vector);
+            double new_dir = suggestHoldDirectionImpl(b, new_loc, new_size_vector);
+            new_hold.setDirection(new_dir);
+        } catch (InvalidAlgorithmParameterException e) {
+            e.printStackTrace();
             return HoldGenerationReturnStatus.FAILURE;
         }
 
@@ -279,11 +338,10 @@ public class HoldSuggestionGenerator extends Analyzer {
 
         HoldGenerationReturnStatus status = HoldGenerationReturnStatus.FAILURE;
         if (settings.generateLeastCommonHoldType()) {
-            status = generateLeastCommonTypeHoldImpl(flat_board, new_h);
+            status = generateLeastCommonTypeHandHoldImpl(flat_board, new_h);
         } else {
-            HashSet<Hold.Type> generate_types = settings.getHoldTypeToGenerate();
-            // TODO
-            System.out.println("This needs to be added LOL");
+            Hold.Type type = settings.getHoldTypeToGenerate();
+            status = generateHoldOfType(flat_board, new_h, type);
         }
 
         // Make sure to do something on failure,

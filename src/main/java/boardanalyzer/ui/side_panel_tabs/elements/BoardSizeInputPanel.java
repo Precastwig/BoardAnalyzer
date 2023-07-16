@@ -1,4 +1,4 @@
-package boardanalyzer.ui;
+package boardanalyzer.ui.side_panel_tabs.elements;
 
 import boardanalyzer.ui.basic_elements.JNumberField;
 import boardanalyzer.utils.Vector2;
