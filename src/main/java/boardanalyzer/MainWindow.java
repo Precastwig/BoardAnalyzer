@@ -78,6 +78,7 @@ public class MainWindow {
 
 		// Make the board listen to the side panel
 		side_panel.addActionListener(board);
+		side_panel.addChangeListener(board);
 
         // Add everything to frame
         m_frame.add(board,BorderLayout.CENTER);

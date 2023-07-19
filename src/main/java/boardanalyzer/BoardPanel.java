@@ -2,7 +2,6 @@ package boardanalyzer;
 
 import boardanalyzer.board_logic.BoardSave;
 import boardanalyzer.board_logic.Hold;
-import boardanalyzer.board_logic.analysis.HeatmapGenerator;
 import boardanalyzer.board_logic.analysis.HoldSuggestionGenerator;
 import boardanalyzer.ui.*;
 import boardanalyzer.ui.side_panel_tabs.elements.BoardSizeInputPanel;
@@ -211,15 +210,22 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 					(int)m_render_offset.x, (int)m_render_offset.y,
 					(int)resized_board_width, (int)resized_board_height,this);
 
+			// Get hold highlight maps
+			HashMap<Hold.Type, Boolean> type_highlight_map = m_side_panel.m_board_stats.getHoldTypeHighlightingMap();
+			HashMap<Hold.Direction, Boolean> direction_highlight_map = m_side_panel.m_board_stats.getHoldDirectionHighlightingMap();
+
+			boolean dont_show_holds =
+					(type_highlight_map.containsValue(true) || direction_highlight_map.containsValue(true)) &&
+							m_side_panel.m_board_stats.hideHoldsWhileHighlighting();
 			// Draw holds
 			ArrayList<Hold> holds = m_board_save.m_board.getHolds();
 			if (!holds.isEmpty()) {
 				for (Hold h : holds) {
-					Color c = getColorFromHold(h);
 					Hold hold_to_render = h;
 					if (m_state == BoardPanelState.HOLD_SELECTED && h == m_selected_hold) {
 						hold_to_render = m_side_panel.m_hold_selection_settings.getNewHold();
 					}
+					Color c = getColorFromHold(hold_to_render);
 					Vector2 circle_size = new Vector2(
 							hold_to_render.size().x * m_board_zoom_factor,
 							hold_to_render.size().y * m_board_zoom_factor);
@@ -235,11 +241,40 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 							);
 					int lineWidth = Math.max((int)(circle_size.x / 10.0), 3);
 
+					boolean highlighting_hold = direction_highlight_map.get(hold_to_render.directionClassification());
+					for (Hold.Type t : hold_to_render.getTypes()) {
+						if (type_highlight_map.get(t)) {
+							highlighting_hold = true;
+						}
+					}
+
+					if (highlighting_hold) {
+						double blob_size = circle_size.x + m_side_panel.m_board_stats.getBrightness();
+						double blob_pos_x = circle_centre.x - (blob_size / 2.0);
+						double blob_pos_y = circle_centre.y - (blob_size / 2.0);
+						float[] dist = {0.0f, 1.0f};
+						Color blob_colour = c;
+						if (m_side_panel.m_board_stats.highlightSingleColour()) {
+							blob_colour = Color.RED; // idk just pick one I guess
+						}
+						Color[] colors = {blob_colour, new Color(0,0,0,0)};
+						RadialGradientPaint p =
+								new RadialGradientPaint(circle_centre.toPoint2D(), (float)(blob_size/2.0), dist, colors);
+						g2.setPaint(p);
+						Shape blob = new Ellipse2D.Double(blob_pos_x, blob_pos_y, blob_size, blob_size);
+						g2.fill(blob);
+					}
+
+					if (dont_show_holds) {
+						continue;
+					}
+
 					if (m_state == BoardPanelState.HOLD_SELECTED && h == m_selected_hold) {
 						// Draw background highlight
 						Shape highlight = new Ellipse2D.Double(circle_pos.x, circle_pos.y, circle_size.x, circle_size.y);
-						g2.setStroke(new BasicStroke(lineWidth + 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
+						int line_thickness = lineWidth + 3;
 						g2.setColor(Color.WHITE);
+						g2.setStroke(new BasicStroke(line_thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL));
 						g2.draw(highlight);
 						g2.drawLine(
 								(int) point_on_circle_in_dir.x,
@@ -327,8 +362,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 
 	@Override
 	public void stateChanged(ChangeEvent e) {
-		// TODO Auto-generated method stub
-		
+		repaint();
 	}
 
 	@Override
@@ -343,8 +377,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			saveSelectedHold();
 		} else if (Objects.equals(e.getActionCommand(), "DeleteHold")) {
 			deleteSelectedHold();
-		} else if (Objects.equals(e.getActionCommand(), "GenerateHeatmap")) {
-			generateHeatmap();
 		} else if (Objects.equals(e.getActionCommand(), "MoveCorners")) {
 			flipCornerMoveState();
 		} else if (Objects.equals(e.getActionCommand(), "GenerateHold")) {
@@ -531,35 +563,6 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			m_instruction_panel.setText("Board saved to file " + file.getAbsolutePath());
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
-	}
-	
-	private void generateHeatmap() {
-		HeatmapGenerator generator = new HeatmapGenerator(
-				m_board_save.m_board,
-				m_board_save.m_board_dimensions);
-		File output_file = new File("heatmap.png");
-		HashSet<Hold.Type> holdtypes = m_side_panel.m_heatmap_settings.getSelectedHoldTypes();
-		if (holdtypes.isEmpty()) {
-			holdtypes.add(Hold.Type.CRIMP);
-			holdtypes.add(Hold.Type.FOOT);
-			holdtypes.add(Hold.Type.JUG);
-			holdtypes.add(Hold.Type.PINCH);
-			holdtypes.add(Hold.Type.POCKET);
-			holdtypes.add(Hold.Type.SLOPER);
-		}
-		m_instruction_panel.setText("Generating heatmap..");
-		BufferedImage image = generator.generateHeatmap(
-				m_side_panel.m_heatmap_settings.getBrightness(),
-				holdtypes,
-				m_side_panel.m_heatmap_settings.holdTypesShouldExactlyMatch(),
-				m_side_panel.m_heatmap_settings.holdDirectionMatters()
-				);
-		try {
-			ImageIO.write(image, "png", output_file);
-			m_instruction_panel.setText("<html>Generated heatmap file</html>");
-		} catch (IOException e1) {
-			System.out.println("Failed to write output file");
 		}
 	}
 	

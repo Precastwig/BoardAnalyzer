@@ -178,6 +178,10 @@ public class Hold implements Serializable{
 	public double direction() {
 		return m_direction_rad;
 	}
+
+	public Direction directionClassification() {
+		return Direction.classifyAngle(m_direction_rad);
+	}
 	
 	public void setDirection(double dir) {
 		m_direction_rad = dir;

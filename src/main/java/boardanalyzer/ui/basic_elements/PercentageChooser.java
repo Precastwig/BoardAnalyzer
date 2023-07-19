@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import javax.swing.JPanel;
 
@@ -86,14 +87,14 @@ public class PercentageChooser<Type> extends JPanel implements ActionListener {
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand() == "Plus") {
+		if (Objects.equals(e.getActionCommand(), "Plus")) {
 			for (int i = 0; i < m_all_types.length; i++) {
 				BarWithButtons bar = m_bars.get(i);
 				if (bar.m_plus_button == e.getSource()) {
 					bar.increaseValue();
 				}
 			}
-		} else if (e.getActionCommand() == "Minus") {
+		} else if (Objects.equals(e.getActionCommand(), "Minus")) {
 			for (int i = 0; i < m_all_types.length; i++) {
 				BarWithButtons bar = m_bars.get(i);
 				if (bar.m_minus_button == e.getSource()) {

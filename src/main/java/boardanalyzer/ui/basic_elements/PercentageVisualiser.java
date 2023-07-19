@@ -3,20 +3,22 @@ package boardanalyzer.ui.basic_elements;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
-public class PercentageVisualiser<Type> extends JPanel {
+public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implements ActionListener {
     private ArrayList<JProgressBar> m_bars;
-    private ArrayList<JButton> m_hightlight_buttons;
+    private ArrayList<JButton> m_highlight_buttons;
+    private ArrayList<Boolean> m_highlighting;
     private Type[] m_all_types;
     public PercentageVisualiser(Type[] values) {
         setLayout(new GridBagLayout());
         GridBagConstraints constraint = new GridBagConstraints();
         m_bars = new ArrayList<>();
-        m_hightlight_buttons = new ArrayList<>();
+        m_highlighting = new ArrayList<>();
+        m_highlight_buttons = new ArrayList<>();
         Icon icon;
         try {
             Image image = ImageIO.read(ClassLoader.getSystemResource("images/lightbulb.PNG"));
@@ -29,6 +31,7 @@ public class PercentageVisualiser<Type> extends JPanel {
         constraint.gridy = 0;
         constraint.fill = GridBagConstraints.HORIZONTAL;
         for (Type type : m_all_types) {
+            m_highlighting.add(false);
             constraint.gridwidth = 2;
             constraint.gridx = 2;
             constraint.weightx = 0.5;
@@ -45,7 +48,8 @@ public class PercentageVisualiser<Type> extends JPanel {
             }
             highlight_button.setMargin(new Insets(0,0,0,0));
             highlight_button.setMaximumSize(new Dimension(100, 20));
-            m_hightlight_buttons.add(highlight_button);
+            highlight_button.setActionCommand("Highlight");
+            m_highlight_buttons.add(highlight_button);
 
             constraint.gridx = 4;
             constraint.gridwidth = 1;
@@ -70,10 +74,12 @@ public class PercentageVisualiser<Type> extends JPanel {
 
             constraint.gridy++;
         }
+
+        addActionListener(this);
     }
 
     public void addActionListener(ActionListener listener) {
-        for (JButton button : m_hightlight_buttons) {
+        for (JButton button : m_highlight_buttons) {
             button.addActionListener(listener);
         }
     }
@@ -85,6 +91,33 @@ public class PercentageVisualiser<Type> extends JPanel {
         }
         for (int i = 0; i < m_all_types.length; i++) {
             m_bars.get(i).setValue((int)(((double)vals[i] / (double)total) * 100.0));
+        }
+    }
+
+    public void removeHighlights() {
+        m_highlighting.clear();
+        for (Type t : m_all_types) {
+            m_highlighting.add(false);
+        }
+    }
+
+    public HashMap<Type, Boolean> getHighlightMap() {
+        HashMap<Type, Boolean> map = new HashMap<>();
+        for (Type t : m_all_types) {
+            map.put(t, m_highlighting.get(t.ordinal()));
+        }
+        return map;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (Objects.equals(e.getActionCommand(), "Highlight")) {
+            for (int i = 0; i < m_all_types.length; i++) {
+                JButton button = m_highlight_buttons.get(i);
+                if (button == e.getSource()) {
+                    m_highlighting.set(i, !m_highlighting.get(i));
+                }
+            }
         }
     }
 }
