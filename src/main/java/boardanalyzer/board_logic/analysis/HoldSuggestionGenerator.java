@@ -230,6 +230,18 @@ public class HoldSuggestionGenerator extends Analyzer {
             return Hold.Direction.getRandomAngle(valid_foot_directions[r.nextInt(valid_foot_directions.length)]);
         }
 
+        if (types.contains(Hold.Type.PINCH)) {
+            Hold.Direction[] valid_pinch_directions = {
+                    Hold.Direction.UP,
+                    Hold.Direction.LEFT_SKEW,
+                    Hold.Direction.RIGHT_SKEW,
+                    Hold.Direction.LEFT_SIDEPULL,
+                    Hold.Direction.RIGHT_SIDEPULL
+            };
+            Random r = new Random();
+            return Hold.Direction.getRandomAngle(valid_pinch_directions[r.nextInt(valid_pinch_directions.length)]);
+        }
+
         double hold_vicinity_distance = getProximityDistance(b);
         ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
         if (holds_in_proximity.isEmpty()) {
