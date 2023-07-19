@@ -45,6 +45,7 @@ public class BoardStatistics extends BorderedPanel {
 		m_hold_type_percentages = new PercentageVisualiser<Hold.Type>(Hold.Type.values());
 		m_hold_direction_percentages = new PercentageVisualiser<Hold.Direction>(Hold.Direction.values());
 		m_ignore_feet_checkbox = new JCheckBox("Ignore feet");
+		m_ignore_feet_checkbox.setSelected(true);
 
 		m_show_hold_stats_button.setActionCommand("ShowHoldStats");
 		m_ignore_feet_checkbox.setActionCommand("StatisticsIgnoreFeet");

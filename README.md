@@ -1,7 +1,7 @@
 # (Climbing) Board analyzer
 When resetting my climbing wall, I found that I often wanted something to tell me where to put a jug so I get a nice even spread. So I've made this.
 
-This tool aims to help one analyze any particular climbing board set, provide suggestions on new hold positions/direction/type, produce heatmaps of various types.
+This tool aims to help one analyze any particular climbing board set, provide suggestions on new hold positions/direction/type, and highlight areas of interest.
 
 ## How to "install"
 1. Make sure you have at least java version 17 installed (https://www.oracle.com/uk/java/technologies/downloads/)
@@ -17,9 +17,12 @@ Since the program is changing quite often, I won't go into details but the jist 
 5. Click on the image to add holds
 6. Use the various analysis tools
 
+### Contributing
+If you think this program could be improved, feel free to open a PR.
+
 ### To do
 - BoardPanel:
-    - Force every hold to have a type
+	- Make the hotkeys actually work
     - Change hold creation input to be "better"
         - Drag on hold -> change location
         - Drag on "tip" of direction -> change size/direction
@@ -27,18 +30,19 @@ Since the program is changing quite often, I won't go into details but the jist 
     - Add ability to select other holds while one is selected
 - BoardSettings:
     - Add "set to current" button to type/direction/size tabs
-    - When changing the board corners, check all existing holds for new outside-ness, and display "are you sure" and delete those outside
 - Hold selection:
     - Add "discard changes" button - hotkey to esc
 - UI:
     - Dissallow features until board is fully set up (ie. don't let people use any analysis tools until all corners added and board size has been input)
     - Show errors/warnings in red on info pane, like when saving a hold that's invalid
-    - Show progress bar during long generations/Put them on a seperate thread
-- Heatmap:
-    - Improve efficiency of heatmap generation (do something like quadtree for raytracing (Is it called Kd-tree?))
-    - Visualize heatmap overlay on board and add button to hide/show
+    - Show progress bar during saving and do on a seperate thread
+	- Remove weird colour mixing and just display single colour (probably should be done after the hold type overhaul)
 - Major features:
-    - Figure out how to alter the hold size during perspective shift in a way that is reversable
+	- Hold type overhaul
+		- Make hold types have one MAJOR/MAIN type with any number of sub-types
+		- Add the "wood/plastic" sub-type
+		- Force every hold to have a MAJOR/MAIN type
+	- Add colour choosing to settings
     - Add Suggestions for holds to REMOVE
     - Allow dragging hold into ellipses, and fix underlying analysis to work with ellipses (tricksy, lots of math involved)
     - Add route creation/saving (Not really the point of this app)
@@ -47,9 +51,11 @@ Since the program is changing quite often, I won't go into details but the jist 
         - Train AI on moonboard problems
     - Auto hold discovery (I will probably never do this)
 
-#### Why Java?
+##### Why Java?
 This would be more useful to others as a website, but I don't want the faff of hosting a website, and I hate HTML/CSS/Javascript. This project is mainly for my own use, if others find it useful too then that'd be nice.
 
 C++ is fun, until you want to make rapid progress with pre-made GUI elements, then you're faffing around with various garbage, so that's a no-go.
 
 Java has good, easy to produce, GUI design built into Swing, so java it is.
+
+Why not an smartphone app? Because I don't really know what I'm doing with android development, and I don't want to learn.
