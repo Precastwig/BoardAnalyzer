@@ -9,21 +9,26 @@ import java.io.IOException;
 import java.util.*;
 
 public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implements ActionListener {
-    private ArrayList<JProgressBar> m_bars;
-    private ArrayList<JButton> m_highlight_buttons;
-    private ArrayList<Boolean> m_highlighting;
-    private Type[] m_all_types;
+    private final ArrayList<JProgressBar> m_bars;
+    private final ArrayList<JButton> m_highlight_buttons;
+    private final ArrayList<Boolean> m_highlighting;
+    private final Type[] m_all_types;
+    private final Icon m_lightbulb_dim_icon;
+    private final Icon m_lightbuilb_lit_icon;
     public PercentageVisualiser(Type[] values) {
         setLayout(new GridBagLayout());
         GridBagConstraints constraint = new GridBagConstraints();
         m_bars = new ArrayList<>();
         m_highlighting = new ArrayList<>();
         m_highlight_buttons = new ArrayList<>();
-        Icon icon;
         try {
-            Image image = ImageIO.read(ClassLoader.getSystemResource("images/lightbulb.PNG"));
-            Image scaled_image = image.getScaledInstance(16, 16,  java.awt.Image.SCALE_SMOOTH);
-            icon = new ImageIcon(scaled_image);
+            Image image_dim = ImageIO.read(ClassLoader.getSystemResource("images/lightbulb-dim.png"));
+            Image resized_image_dim = image_dim.getScaledInstance(16, 16,  java.awt.Image.SCALE_SMOOTH);
+            m_lightbulb_dim_icon = new ImageIcon(resized_image_dim);
+
+            Image image_lit = ImageIO.read(ClassLoader.getSystemResource("images/lightbulb-lit.png"));
+            Image resized_image_lit = image_lit.getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+            m_lightbuilb_lit_icon = new ImageIcon(resized_image_lit);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -40,8 +45,8 @@ public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implem
             add(label, constraint);
 
             JButton highlight_button;
-            if (icon.getIconHeight() > 0) {
-                highlight_button = new JButton(icon);
+            if (m_lightbulb_dim_icon.getIconHeight() > 0) {
+                highlight_button = new JButton(m_lightbulb_dim_icon);
             } else {
                 // I have no idea if this works
                 highlight_button = new JButton("\uD83D\uDCA1");
@@ -116,6 +121,13 @@ public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implem
                 JButton button = m_highlight_buttons.get(i);
                 if (button == e.getSource()) {
                     m_highlighting.set(i, !m_highlighting.get(i));
+
+                    if (m_highlighting.get(i)) {
+                        // Should be "lit"
+                        button.setIcon(m_lightbuilb_lit_icon);
+                    } else {
+                        button.setIcon(m_lightbulb_dim_icon);
+                    }
                 }
             }
         }

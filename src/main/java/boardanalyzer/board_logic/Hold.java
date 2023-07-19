@@ -13,7 +13,7 @@ public class Hold implements Serializable{
 	 */
 	@Serial
 	private static final long serialVersionUID = 1L;
-	
+
 	// Holds can be any combination of the below categories
 	public enum Type {
 		JUG("Jug"),
@@ -54,15 +54,15 @@ public class Hold implements Serializable{
 		private Direction(String s) {
 			this.name = s;
 		}
-		private static final double MARGIN = Math.PI / 32.0;
+		private static final double MARGIN = Math.PI / 16.0;
 		private static final double UP_ANGLE = -Math.PI/2;
 		private static final double LEFT_ANGLE = Math.PI;
 		private static final double RIGHT_ANGLE = 0;
 		static public Direction classifyAngle(double angle) {
 			if (UP_ANGLE - MARGIN < angle && angle < UP_ANGLE + MARGIN) {
 				return Hold.Direction.UP;
-			} else if ((-LEFT_ANGLE < angle && angle < -LEFT_ANGLE + MARGIN) ||
-					(LEFT_ANGLE - MARGIN < angle && angle < LEFT_ANGLE)) {
+			} else if ((-LEFT_ANGLE <= angle && angle <= -LEFT_ANGLE + MARGIN) ||
+					(LEFT_ANGLE - MARGIN <= angle && angle <= LEFT_ANGLE)) {
 				return Hold.Direction.LEFT_SIDEPULL;
 			} else if (RIGHT_ANGLE - MARGIN < angle && angle < RIGHT_ANGLE + MARGIN) {
 				return Hold.Direction.RIGHT_SIDEPULL;
@@ -155,6 +155,22 @@ public class Hold implements Serializable{
 		m_size = new Vector2(size);
 		m_direction_rad = direction_rad;
 		m_types = new HashSet<Type>();
+	}
+
+	public Hold(Hold h) {
+		m_pos = new Vector2(h.m_pos);
+		m_size = new Vector2(h.m_size);
+		m_direction_rad = h.m_direction_rad;
+		m_types = new HashSet<>(h.m_types);
+	}
+
+	@Override
+	public boolean equals(Object hold) {
+		Hold other_hold = (Hold)hold;
+		return m_size.equals(other_hold.m_size) &&
+				m_pos.equals(other_hold.m_pos) &&
+				m_direction_rad == other_hold.m_direction_rad &&
+				m_types.equals(other_hold.m_types);
 	}
 	
 	public Vector2 position() {

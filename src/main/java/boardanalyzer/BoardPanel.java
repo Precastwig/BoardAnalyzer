@@ -124,10 +124,13 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		return new Color(a << 24 | r << 16 | g << 8 | b);
 	}
 	
-	public Color getColorFromHold(Hold h) {
+	public Color getColorFromHold(Hold hold) {
+		Hold h = hold;
 		int alpha = 255;
 		if (m_state == BoardPanelState.HOLD_SELECTED) {
-			if (h != m_selected_hold) {
+			if (h.equals(m_selected_hold)) {
+				h = m_side_panel.m_hold_selection_settings.getNewHold();
+			} else {
 				alpha = 126;
 			}
 		}
@@ -208,7 +211,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			g2.drawImage(
 					m_board_save.m_board_image,
 					(int)m_render_offset.x, (int)m_render_offset.y,
-					(int)resized_board_width, (int)resized_board_height,this);
+					resized_board_width, resized_board_height,this);
 
 			// Get hold highlight maps
 			HashMap<Hold.Type, Boolean> type_highlight_map = m_side_panel.m_board_stats.getHoldTypeHighlightingMap();
@@ -222,10 +225,10 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			if (!holds.isEmpty()) {
 				for (Hold h : holds) {
 					Hold hold_to_render = h;
+					Color c = getColorFromHold(h);
 					if (m_state == BoardPanelState.HOLD_SELECTED && h == m_selected_hold) {
 						hold_to_render = m_side_panel.m_hold_selection_settings.getNewHold();
 					}
-					Color c = getColorFromHold(hold_to_render);
 					Vector2 circle_size = new Vector2(
 							hold_to_render.size().x * m_board_zoom_factor,
 							hold_to_render.size().y * m_board_zoom_factor);

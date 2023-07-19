@@ -6,14 +6,16 @@ import boardanalyzer.ui.basic_elements.BorderedPanel;
 import boardanalyzer.utils.Vector2;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import javax.swing.*;
 
-public class HoldSelectionSettings extends BorderedPanel {
+public class HoldSelectionSettings extends BorderedPanel implements ActionListener {
 	ArrayList<JCheckBox> m_hold_type_checkboxes;
 	private final JButton m_save_hold_button ;
 	private final JButton m_delete_hold_button;
@@ -21,11 +23,10 @@ public class HoldSelectionSettings extends BorderedPanel {
 	private final JButton m_suggest_direction_button;
 	private final JLabel m_direction_label;
 	private final JLabel m_size_label;
-	private final Hold m_new_hold;
+	private Hold m_new_hold;
 	public HoldSelectionSettings() {
 		setToBoxLayout();
 
-//		JPanel hold_type_panel = new JPanel();
 		m_hold_type_checkboxes = new ArrayList<>();
 		m_new_hold = new Hold();
 		m_direction_label = new JLabel("Direction: --");
@@ -47,11 +48,11 @@ public class HoldSelectionSettings extends BorderedPanel {
 		m_suggest_type_button.setAlignmentX(0.5f);
 		m_suggest_direction_button.setAlignmentX(0.5f);
 
-
 		add(Box.createVerticalGlue());
 		for (Hold.Type hold : Hold.Type.values()) {
 			Box b = Box.createHorizontalBox();
 			JCheckBox cb = new JCheckBox(hold.toString());
+			cb.addActionListener(this);
 			m_hold_type_checkboxes.add(cb);
 			b.add(cb);
 			b.add(Box.createHorizontalGlue());
@@ -75,43 +76,41 @@ public class HoldSelectionSettings extends BorderedPanel {
 		m_delete_hold_button.addActionListener(listener);
 		m_suggest_type_button.addActionListener(listener);
 		m_suggest_direction_button.addActionListener(listener);
+		for (JCheckBox cb : m_hold_type_checkboxes) {
+			cb.addActionListener(listener);
+		}
 	}
 
 	public void selectHold(Hold h) {
-		setCrimp(h.isCrimp());
-		setJug(h.isJug());
-		setSloper(h.isSloper());
-		setPocket(h.isPocket());
-		setPinch(h.isPinch());
-		setFoot(h.isFoot());
-		setDirection(h.direction());
-		setHoldSize(h.size());
-		setPosition(h.position());
+		m_new_hold = new Hold(h);
+		updateTypeCheckboxes();
+		updateHoldSizeLabel();
+		updateDirectionLabel();
 		enableAll();
 	}
 	
 	public boolean isCrimp() {
-		return m_hold_type_checkboxes.get(Hold.Type.CRIMP.ordinal()).isSelected();
+		return m_new_hold.isCrimp();
 	}
 	
 	public boolean isJug() {
-		return m_hold_type_checkboxes.get(Hold.Type.JUG.ordinal()).isSelected();
+		return m_new_hold.isJug();
 	}
 	
 	public boolean isSloper() {
-		return m_hold_type_checkboxes.get(Hold.Type.SLOPER.ordinal()).isSelected();
+		return m_new_hold.isSloper();
 	}
 	
 	public boolean isPocket() {
-		return m_hold_type_checkboxes.get(Hold.Type.POCKET.ordinal()).isSelected();
+		return m_new_hold.isPocket();
 	}
 	
 	public boolean isPinch() {
-		return m_hold_type_checkboxes.get(Hold.Type.PINCH.ordinal()).isSelected();
+		return m_new_hold.isPinch();
 	}
 	
 	public boolean isFoot() {
-		return m_hold_type_checkboxes.get(Hold.Type.FOOT.ordinal()).isSelected();
+		return m_new_hold.isFoot();
 	}
 	
 	public double getDirection() {
@@ -133,61 +132,43 @@ public class HoldSelectionSettings extends BorderedPanel {
 	public Hold getNewHold() {return m_new_hold;};
 	
 	public void setToHoldType(Hold.Type type) {
-		setCrimp(true);
-		setJug(false);
-		setSloper(false);
-		setPocket(false);
-		setFoot(false);
-		setPinch(false);
+		m_new_hold.clearTypes();
+		m_new_hold.addType(type);
+		updateTypeCheckboxes();
+	}
 
-		switch (type) {
-			case CRIMP -> setCrimp(true);
-			case JUG -> setJug(true);
-			case SLOPER -> setSloper(true);
-			case POCKET -> setPocket(true);
-			case FOOT -> setFoot(true);
-			case PINCH -> setPinch(true);
+	public void updateTypeCheckboxes() {
+		HashSet<Hold.Type> new_hold_types = m_new_hold.getTypes();
+		for (Hold.Type type : Hold.Type.values()) {
+			m_hold_type_checkboxes.get(type.ordinal()).setSelected(new_hold_types.contains(type));
 		}
 	}
-	
-	public void setCrimp(boolean b) {
-		m_hold_type_checkboxes.get(Hold.Type.CRIMP.ordinal()).setSelected(b);
-	}
-	
-	public void setJug(boolean b) {
-		m_hold_type_checkboxes.get(Hold.Type.JUG.ordinal()).setSelected(b);
-	}
-	
-	public void setSloper(boolean b) {
-		m_hold_type_checkboxes.get(Hold.Type.SLOPER.ordinal()).setSelected(b);
-	}
-	
-	public void setPocket(boolean b) {
-		m_hold_type_checkboxes.get(Hold.Type.POCKET.ordinal()).setSelected(b);
-	}
-	
-	public void setPinch(boolean b) {
-		m_hold_type_checkboxes.get(Hold.Type.PINCH.ordinal()).setSelected(b);
-	}
-	
-	public void setFoot(boolean b) {
-		m_hold_type_checkboxes.get(Hold.Type.FOOT.ordinal()).setSelected(b);
+
+	public void updateDirectionLabel() {
+		double adjusted_degs = Math.toDegrees(m_new_hold.direction() - (3 * Math.PI)/2 + (4 * Math.PI)) % 360;
+		DecimalFormat formatted_num = new DecimalFormat("#.##");
+		m_direction_label.setText(
+				"Direction: " +
+						formatted_num.format(adjusted_degs) + "\u00B0" // degree symbol
+						+ "  : " + m_new_hold.directionClassification());
 	}
 	
 	public void setDirection(double rad) {
 		m_new_hold.setDirection(rad);
-		double adjusted_degs = Math.toDegrees(rad - (3 * Math.PI)/2 + (4 * Math.PI)) % 360;
+		updateDirectionLabel();
+	}
+
+	public void updateHoldSizeLabel() {
 		DecimalFormat formatted_num = new DecimalFormat("#.##");
-		m_direction_label.setText("Direction: " + formatted_num.format(adjusted_degs) + "\u00B0");
+		m_size_label.setText("Size: (" +
+				formatted_num.format(m_new_hold.size().x) + ", " +
+				formatted_num.format(m_new_hold.size().y) + ")");
 	}
 	
 	public void setHoldSize(
 			Vector2 size) {
 		m_new_hold.setSize(size);
-		DecimalFormat formatted_num = new DecimalFormat("#.##");
-		m_size_label.setText("Size: (" +
-				formatted_num.format(m_new_hold.size().x) + ", " +
-				formatted_num.format(m_new_hold.size().y) + ")");
+		updateHoldSizeLabel();
 	}
 
 	public void setPosition(Vector2 pos) {
@@ -214,5 +195,15 @@ public class HoldSelectionSettings extends BorderedPanel {
 		m_save_hold_button.setEnabled(true);
 		m_suggest_type_button.setEnabled(true);
 		m_suggest_direction_button.setEnabled(true);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		m_new_hold.clearTypes();
+		for (Hold.Type type : Hold.Type.values()) {
+			if (m_hold_type_checkboxes.get(type.ordinal()).isSelected()) {
+				m_new_hold.addType(type);
+			}
+		}
 	}
 }
