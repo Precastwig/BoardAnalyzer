@@ -70,7 +70,7 @@ public class HoldSuggestionGenerator extends Analyzer {
         }
 
         Vector2 return_position = new_locs.get(0); // default
-        int least_holds_of_type_in_proximity = Integer.MAX_VALUE;
+        double least_holds_of_type_in_proximity_percentage = 1.0;
         double furthest_hold_of_type = 0;
         for (Vector2 loc : new_locs) {
             ArrayList<Hold> nearby_holds = b.getHoldsInRange(loc, getProximityDistance(b));
@@ -86,11 +86,12 @@ public class HoldSuggestionGenerator extends Analyzer {
                 }
             }
 
-            if (holds_in_proximity_of_type < least_holds_of_type_in_proximity) {
-                least_holds_of_type_in_proximity = holds_in_proximity_of_type;
+            double holds_in_proximity_of_type_percentage = ((double)holds_in_proximity_of_type) / (double)nearby_holds.size();
+            if (holds_in_proximity_of_type_percentage < least_holds_of_type_in_proximity_percentage) {
+                least_holds_of_type_in_proximity_percentage = holds_in_proximity_of_type_percentage;
 
                 return_position = loc;
-            } else if (holds_in_proximity_of_type == least_holds_of_type_in_proximity) {
+            } else if (holds_in_proximity_of_type_percentage == least_holds_of_type_in_proximity_percentage) {
                 if (closest_distance > furthest_hold_of_type) {
                     furthest_hold_of_type = closest_distance;
                 }
@@ -188,13 +189,13 @@ public class HoldSuggestionGenerator extends Analyzer {
     public double suggestHoldDirection(Hold h) {
         FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
         flat_board.removeHoldAt(h.position());
-        return suggestHoldDirectionImpl(flat_board, flat_board.toFlat(h.getCentrePoint()), h.size());
+        return suggestHoldDirectionImpl(flat_board, flat_board.toFlat(h.getCentrePoint()), h.getTypes());
     }
 
     private ArrayList<Hold.Direction> getRelevantHoldDirectionsFromPosition(FlatBoard b, Vector2 position) {
         // If we are far left we don't want to generate right sidepulls or underclings
         // and vice versa
-        double margin_size = 0.1;
+        double margin_size = 0.2;
         ArrayList<Hold.Direction> relevant_directions = new ArrayList<Hold.Direction>(Arrays.asList(Hold.Direction.values()));
         if (position.x < b.getBoardWidth() * margin_size) {
             relevant_directions.remove(Hold.Direction.RIGHT_SIDEPULL);
@@ -212,10 +213,21 @@ public class HoldSuggestionGenerator extends Analyzer {
         return relevant_directions;
     }
 
-    private double suggestHoldDirectionImpl(FlatBoard b, Vector2 position, Vector2 size) {
+    private double suggestHoldDirectionImpl(FlatBoard b, Vector2 position, HashSet<Hold.Type> types) {
         // First check for proximity to top of board, this is the most obvious direction restriction
         if (position.y < b.getBoardHeight() * 0.05) {
             return Hold.Direction.getAngle(Hold.Direction.UP);
+        }
+
+        if (types.contains(Hold.Type.FOOT)) {
+            // I don't think it makes any sense to put a "toehook" foothold on a board
+            Hold.Direction[] valid_foot_directions = {
+                    Hold.Direction.UP,
+                    Hold.Direction.LEFT_SKEW,
+                    Hold.Direction.RIGHT_SKEW
+            };
+            Random r = new Random();
+            return Hold.Direction.getRandomAngle(valid_foot_directions[r.nextInt(valid_foot_directions.length)]);
         }
 
         double hold_vicinity_distance = getProximityDistance(b);
@@ -310,7 +322,7 @@ public class HoldSuggestionGenerator extends Analyzer {
             double new_size = suggestNewHoldSize(b, new_loc);
             Vector2 new_size_vector = new Vector2(new_size, new_size);
             new_hold.setSize(new_size_vector);
-            double new_dir = suggestHoldDirectionImpl(b, new_loc, new_size_vector);
+            double new_dir = suggestHoldDirectionImpl(b, new_loc, new_hold.getTypes());
             new_hold.setDirection(new_dir);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();
@@ -328,7 +340,7 @@ public class HoldSuggestionGenerator extends Analyzer {
             double new_size = suggestNewHoldSize(b, new_loc);
             Vector2 new_size_vector = new Vector2(new_size, new_size);
             new_hold.setSize(new_size_vector);
-            double new_dir = suggestHoldDirectionImpl(b, new_loc, new_size_vector);
+            double new_dir = suggestHoldDirectionImpl(b, new_loc, new_hold.getTypes());
             new_hold.setDirection(new_dir);
         } catch (InvalidAlgorithmParameterException e) {
             e.printStackTrace();

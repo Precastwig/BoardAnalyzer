@@ -42,15 +42,19 @@ public class BoardStatistics extends BorderedPanel {
 
 		add(m_ignore_feet_checkbox);
 		add(m_num_holds);
+		add(Box.createVerticalStrut(50));
 		add(m_hold_type_percentages);
-		add(Box.createVerticalGlue());
+		add(Box.createVerticalStrut(50));
 		add(m_hold_direction_percentages);
+		add(Box.createVerticalStrut(50));
 		add(m_show_hold_stats_button, BorderLayout.PAGE_END);
 	}
 
 	public void addActionListener(ActionListener listener) {
 		m_show_hold_stats_button.addActionListener(listener);
 		m_ignore_feet_checkbox.addActionListener(listener);
+		m_hold_direction_percentages.addActionListener(listener);
+		m_hold_type_percentages.addActionListener(listener);
 	}
 
 	private boolean ignoreFeet() {

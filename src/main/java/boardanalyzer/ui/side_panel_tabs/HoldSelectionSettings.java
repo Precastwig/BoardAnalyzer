@@ -24,6 +24,7 @@ public class HoldSelectionSettings extends BorderedPanel {
 	private final Hold m_new_hold;
 	public HoldSelectionSettings() {
 		setToBoxLayout();
+
 //		JPanel hold_type_panel = new JPanel();
 		m_hold_type_checkboxes = new ArrayList<>();
 		m_new_hold = new Hold();
@@ -39,7 +40,6 @@ public class HoldSelectionSettings extends BorderedPanel {
 		m_delete_hold_button.setActionCommand("DeleteHold");
 		m_save_hold_button.setActionCommand("SaveHold");
 
-//		hold_type_panel.setAlignmentX(0.5f);
 		m_direction_label.setAlignmentX(0.5f);
 		m_size_label.setAlignmentX(0.5f);
 		m_save_hold_button.setAlignmentX(0.5f);
@@ -48,17 +48,16 @@ public class HoldSelectionSettings extends BorderedPanel {
 		m_suggest_direction_button.setAlignmentX(0.5f);
 
 
+		add(Box.createVerticalGlue());
 		for (Hold.Type hold : Hold.Type.values()) {
 			Box b = Box.createHorizontalBox();
 			JCheckBox cb = new JCheckBox(hold.toString());
 			m_hold_type_checkboxes.add(cb);
-//			cb.setAlignmentX(Component.LEFT_ALIGNMENT);
 			b.add(cb);
 			b.add(Box.createHorizontalGlue());
 			add(b);
 		}
 
-//		add(hold_type_panel);
 		add(m_direction_label);
 		add(m_size_label);
 		add(Box.createVerticalStrut(20));
@@ -67,7 +66,6 @@ public class HoldSelectionSettings extends BorderedPanel {
 		add(Box.createVerticalStrut(20));
 		add(m_suggest_type_button);
 		add(m_suggest_direction_button);
-		add(Box.createVerticalGlue());
 
 		disableAll();
 	}

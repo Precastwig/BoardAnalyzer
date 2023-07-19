@@ -191,13 +191,17 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
     public void update(Graphics g) {
 	    super.paintComponents(g);
 //	    System.out.println("Drawing");
-	    Graphics2D g2 = (Graphics2D) g; 
+	    Graphics2D g2 = (Graphics2D) g;
 	    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 	    		RenderingHints.VALUE_ANTIALIAS_ON);
 	    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
 	    		RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		if (m_state == BoardPanelState.LOAD_IMAGE) {
+			g2.setColor(Color.WHITE);
+			g2.drawRect(0,0, (int)this.getSize().getWidth(), (int)this.getSize().getHeight());
+		}
 		if (m_state != BoardPanelState.LOAD_IMAGE && m_board_save.m_board_image != null) {
 			int resized_board_width = (int)(this.getSize().getWidth() * m_board_zoom_factor);
 			int resized_board_height = (int)(this.getSize().getHeight() * m_board_zoom_factor);
@@ -313,6 +317,7 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		if (m_state == BoardPanelState.BOARD_STATS_UP) {
 		    super.paintComponents(g);
 		}
+
 	}
 	
 	@Override
