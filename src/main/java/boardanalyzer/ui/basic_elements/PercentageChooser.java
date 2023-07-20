@@ -56,6 +56,21 @@ public class PercentageChooser<Type> extends JPanel implements ActionListener {
 		//setPreferredSize(new Dimension(0, m_all_types.length * (BarWithButtons.BUTTON_SIZE + 5)));
 		updateBarPercentages();
 	}
+
+	public double[] getPercentages() {
+		int[] ratio = new int[m_all_types.length];
+		int total = 0;
+		for (int i = 0; i < m_all_types.length; i++) {
+			BarWithButtons bar = m_bars.get(i);
+			ratio[i] = bar.m_value;
+			total += ratio[i];
+		}
+		double[] percentages = new double[m_all_types.length];
+		for (int i = 0; i < ratio.length; i++) {
+			percentages[i] = (double)ratio[i] / (double)total;
+		}
+		return percentages;
+	}
 	
 	public int[] getRatio() {
 		int[] ratio = new int[m_all_types.length];

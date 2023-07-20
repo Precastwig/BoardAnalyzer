@@ -146,6 +146,14 @@ public class BoardSettings extends BorderedPanel implements ActionListener {
 		return m_hold_type_bars.getRatio();
 	}
 
+	public double[] getHoldTypePercentages() {
+		return m_hold_type_bars.getPercentages();
+	}
+
+	public double[] getHoldDirectionPercentages() {
+		return m_hold_direction_bars.getPercentages();
+	}
+
 	public void setHoldTypeRatio(int[] ratio) {
 		m_hold_type_bars.setRatio(ratio);
 	}

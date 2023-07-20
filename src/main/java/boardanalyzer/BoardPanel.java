@@ -419,8 +419,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			HoldSuggestionGenerator generator = new HoldSuggestionGenerator(
 					m_board_save.m_board, 
 					m_board_save.m_board_dimensions,
-					m_board_save.m_hold_type_ratio, 
-					m_board_save.m_hold_direction_ratio,
+					m_side_panel.m_board_settings.getHoldTypePercentages(),
+					m_side_panel.m_board_settings.getHoldDirectionPercentages(),
 					m_board_save.m_hold_minimum_size,
 					m_board_save.m_hold_maximum_size);
 			Hold.Type new_type = generator.suggestHoldType(m_selected_hold);
@@ -433,8 +433,8 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 			HoldSuggestionGenerator generator = new HoldSuggestionGenerator(
 					m_board_save.m_board,
 					m_board_save.m_board_dimensions,
-					m_board_save.m_hold_type_ratio, 
-					m_board_save.m_hold_direction_ratio,
+					m_side_panel.m_board_settings.getHoldTypePercentages(),
+					m_side_panel.m_board_settings.getHoldDirectionPercentages(),
 					m_board_save.m_hold_minimum_size,
 					m_board_save.m_hold_maximum_size);
 			double new_dir = generator.suggestHoldDirection(m_selected_hold);
@@ -538,10 +538,10 @@ public class BoardPanel extends JPanel implements ActionListener, ChangeListener
 		HoldSuggestionGenerator generator = new HoldSuggestionGenerator(
 				m_board_save.m_board,
 				m_board_save.m_board_dimensions,
-				m_board_save.m_hold_type_ratio, 
-				m_board_save.m_hold_direction_ratio,
-				m_board_save.m_hold_minimum_size,
-				m_board_save.m_hold_maximum_size);
+				m_side_panel.m_board_settings.getHoldTypePercentages(),
+				m_side_panel.m_board_settings.getHoldDirectionPercentages(),
+				m_side_panel.m_hold_generation_settings.getHoldSizeMin(),
+				m_side_panel.m_hold_generation_settings.getHoldSizeMax());
 		Optional<Hold> new_hold = generator.generateHold(m_side_panel.m_hold_generation_settings);
 		if (new_hold.isPresent()) {
 			m_board_save.m_board.addHold(new_hold.get());
