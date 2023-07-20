@@ -1,13 +1,11 @@
 package boardanalyzer.ui.basic_elements;
 
-import java.awt.Color;
-import java.awt.Dimension;
-
-import javax.swing.JPanel;
+import javax.swing.*;
+import java.awt.*;
 
 public class BarChart extends JPanel {
-	public BarChart() {
-		setBackground(Color.black);
-		setSize(new Dimension(200,200));
-	}
+    public BarChart() {
+        setBackground(Color.black);
+        setSize(new Dimension(200, 200));
+    }
 }

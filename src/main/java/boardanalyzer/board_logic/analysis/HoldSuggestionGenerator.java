@@ -17,6 +17,7 @@ public class HoldSuggestionGenerator extends Analyzer {
 
     private final int m_hold_size_min;
     private final int m_hold_size_max;
+
     public HoldSuggestionGenerator(
             Board board,
             Vector2 flat_board_ratio,
@@ -24,14 +25,14 @@ public class HoldSuggestionGenerator extends Analyzer {
             double[] hold_direction_pref_perc,
             int hold_size_min,
             int hold_size_max) {
-        super(board,  flat_board_ratio);
+        super(board, flat_board_ratio);
         m_hold_size_min = hold_size_min;
         m_hold_size_max = hold_size_max;
         m_hold_type_pref_percentages = hold_type_pref_perc;
         m_hold_direction_pref_percentages = hold_direction_pref_perc;
     }
 
-    private ArrayList<Vector2> cullClosestHalf(FlatBoard b, ArrayList<Vector2> holds) {
+    private List<Vector2> cullClosestHalf(FlatBoard b, List<Vector2> holds) {
         // Cull the 50% of points that are closest to their nearest hold
         if (holds.size() < 5) {
             return holds;
@@ -41,8 +42,8 @@ public class HoldSuggestionGenerator extends Analyzer {
             total_distance += b.getDistanceToNearestHold(p);
         }
         double average = total_distance / holds.size();
-        ArrayList<Vector2> culled_list = new ArrayList<Vector2>();
-        for (Vector2 p: holds) {
+        List<Vector2> culled_list = new ArrayList<>();
+        for (Vector2 p : holds) {
             if (b.getDistanceToNearestHold(p) > average) {
                 culled_list.add(p);
             }
@@ -51,7 +52,7 @@ public class HoldSuggestionGenerator extends Analyzer {
     }
 
     private Vector2 suggestHoldLocationImpl(FlatBoard b) {
-        ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
+        List<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
         new_locs = cullClosestHalf(b, new_locs);
 
         // Choose a random one
@@ -61,7 +62,7 @@ public class HoldSuggestionGenerator extends Analyzer {
     }
 
     private Vector2 suggestHoldLocationForType(FlatBoard b, Hold.Type type) {
-        ArrayList<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
+        List<Vector2> new_locs = getAllPotentialNewHoldLocations(b);
 
         if (type == Hold.Type.FOOT) {
             new_locs.removeIf(
@@ -73,7 +74,7 @@ public class HoldSuggestionGenerator extends Analyzer {
         double least_holds_of_type_in_proximity_percentage = 1.0;
         double furthest_hold_of_type = 0;
         for (Vector2 loc : new_locs) {
-            ArrayList<Hold> nearby_holds = b.getHoldsInRange(loc, getProximityDistance(b));
+            List<Hold> nearby_holds = b.getHoldsInRange(loc, getProximityDistance(b));
             double closest_distance = Double.POSITIVE_INFINITY;
             int holds_in_proximity_of_type = 0;
             for (Hold h : nearby_holds) {
@@ -86,7 +87,7 @@ public class HoldSuggestionGenerator extends Analyzer {
                 }
             }
 
-            double holds_in_proximity_of_type_percentage = ((double)holds_in_proximity_of_type) / (double)nearby_holds.size();
+            double holds_in_proximity_of_type_percentage = (holds_in_proximity_of_type) / (double) nearby_holds.size();
             if (holds_in_proximity_of_type_percentage < least_holds_of_type_in_proximity_percentage) {
                 least_holds_of_type_in_proximity_percentage = holds_in_proximity_of_type_percentage;
 
@@ -102,18 +103,18 @@ public class HoldSuggestionGenerator extends Analyzer {
     }
 
     private Vector2 getRandomValidPosition(FlatBoard b) {
-        Vector2 pos = new Vector2(0,0);
+        Vector2 pos = new Vector2(0, 0);
         do {
-            int EDGE_DISTANCE = (int) (Math.min(b.getBoardWidth(), b.getBoardHeight())*0.05);
+            int EDGE_DISTANCE = (int) (Math.min(b.getBoardWidth(), b.getBoardHeight()) * 0.05);
             Random r = new Random();
             pos.x = r.nextInt((int) b.getBoardWidth() - 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
-            pos.y = r.nextInt((int) b.getBoardHeight()- 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
+            pos.y = r.nextInt((int) b.getBoardHeight() - 2 * EDGE_DISTANCE) + EDGE_DISTANCE;
         } while (checkLocationValid(pos, m_hold_size_min, b));
         return pos;
     }
 
-    private ArrayList<Vector2> getValidVoronoiNewLocations(FlatBoard b) {
-        ArrayList<Vector2> return_list = new ArrayList<Vector2>();
+    private List<Vector2> getValidVoronoiNewLocations(FlatBoard b) {
+        List<Vector2> return_list = new ArrayList<>();
 
         // Use Voronoi to generate potential positions
         PointD[] hold_positions = getPointArrayFromHolds(b.getHolds());
@@ -146,11 +147,11 @@ public class HoldSuggestionGenerator extends Analyzer {
         return return_list;
     }
 
-    private ArrayList<Vector2> getAllPotentialNewHoldLocations(
+    private List<Vector2> getAllPotentialNewHoldLocations(
             FlatBoard b
     ) {
-        ArrayList<Vector2> return_list = new ArrayList<Vector2>();
-        ArrayList<Hold> holds = b.getHolds();
+        List<Vector2> return_list = new ArrayList<>();
+        List<Hold> holds = b.getHolds();
 
         if (holds.size() < 3) {
             // Pick randomly
@@ -158,7 +159,7 @@ public class HoldSuggestionGenerator extends Analyzer {
             return return_list;
         }
 
-        ArrayList<Vector2> potential_locations = getValidVoronoiNewLocations(b);
+        List<Vector2> potential_locations = getValidVoronoiNewLocations(b);
         if (potential_locations.size() < 1) {
             System.out.println("getAllPotentialNewHoldLocations has not generated any locations!");
         }
@@ -169,8 +170,8 @@ public class HoldSuggestionGenerator extends Analyzer {
             Vector2 loc,
             double min_distance,
             FlatBoard b) {
-        if (b.isOutsideBorders(loc) || b.existsHold((int)loc.x, (int)loc.y) ||
-            loc.x < min_distance || loc.y < min_distance ||
+        if (b.isOutsideBorders(loc) || b.existsHold((int) loc.x, (int) loc.y) ||
+                loc.x < min_distance || loc.y < min_distance ||
                 b.getBoardWidth() - loc.x < min_distance ||
                 b.getBoardHeight() - loc.y < min_distance ||
                 loc.y > b.getLowestAllowedHandHoldHeight()) {
@@ -192,16 +193,16 @@ public class HoldSuggestionGenerator extends Analyzer {
         return suggestHoldDirectionImpl(flat_board, flat_board.toFlat(h.getCentrePoint()), h.getTypes());
     }
 
-    private ArrayList<Hold.Direction> getRelevantHoldDirectionsFromPosition(FlatBoard b, Vector2 position) {
+    private List<Hold.Direction> getRelevantHoldDirectionsFromPosition(FlatBoard b, Vector2 position) {
         // If we are far left we don't want to generate right sidepulls or underclings
         // and vice versa
         double margin_size = 0.2;
-        ArrayList<Hold.Direction> relevant_directions = new ArrayList<Hold.Direction>(Arrays.asList(Hold.Direction.values()));
+        List<Hold.Direction> relevant_directions = new ArrayList<>(Arrays.asList(Hold.Direction.values()));
         if (position.x < b.getBoardWidth() * margin_size) {
             relevant_directions.remove(Hold.Direction.RIGHT_SIDEPULL);
             relevant_directions.remove(Hold.Direction.UNDERCUT);
         }
-        if (b.getBoardWidth() * (1-margin_size) < position.x) {
+        if (b.getBoardWidth() * (1 - margin_size) < position.x) {
             relevant_directions.remove(Hold.Direction.LEFT_SIDEPULL);
             relevant_directions.remove(Hold.Direction.UNDERCUT);
         }
@@ -213,8 +214,8 @@ public class HoldSuggestionGenerator extends Analyzer {
         return relevant_directions;
     }
 
-    private ArrayList<Hold.Direction> getReleventHoldDirectionsFromType(HashSet<Hold.Type> types) {
-        ArrayList<Hold.Direction> valid_directions = new ArrayList<>(Arrays.asList(Hold.Direction.values()));
+    private List<Hold.Direction> getReleventHoldDirectionsFromType(Set<Hold.Type> types) {
+        List<Hold.Direction> valid_directions = new ArrayList<>(Arrays.asList(Hold.Direction.values()));
 
         if (types.contains(Hold.Type.FOOT)) {
             // I don't think it makes any sense to put a "toehook" foothold on a board
@@ -225,17 +226,17 @@ public class HoldSuggestionGenerator extends Analyzer {
 
         if (types.contains(Hold.Type.PINCH)) {
             valid_directions.remove(Hold.Direction.UNDERCUT);
-       }
+        }
         return valid_directions;
     }
 
-    private double suggestHoldDirectionImpl(FlatBoard b, Vector2 position, HashSet<Hold.Type> types) {
+    private double suggestHoldDirectionImpl(FlatBoard b, Vector2 position, Set<Hold.Type> types) {
         // First check for proximity to top of board, this is the most obvious direction restriction
         if (position.y < b.getBoardHeight() * 0.05) {
             return Hold.Direction.getAngle(Hold.Direction.UP);
         }
 
-        ArrayList<Hold.Direction> valid_directions = getReleventHoldDirectionsFromType(types);
+        List<Hold.Direction> valid_directions = getReleventHoldDirectionsFromType(types);
         valid_directions.retainAll(getRelevantHoldDirectionsFromPosition(b, position));
         if (valid_directions.isEmpty()) {
             System.out.println("Error: No valid direction for hold type and position");
@@ -274,11 +275,11 @@ public class HoldSuggestionGenerator extends Analyzer {
         return m_hold_size_min + (Math.random() * (max_size - m_hold_size_min));
     }
 
-    private Hold.Type getHoldTypeBasedOnProximityAndPreference(FlatBoard b,  Vector2 position, Hold.Type[] types) {
+    private Hold.Type getHoldTypeBasedOnProximityAndPreference(FlatBoard b, Vector2 position, Hold.Type[] types) {
         Hold.Type least_filled_type = types[0];
         double hold_vicinity_distance = getProximityDistance(b);
         double largest_percentage = Double.NEGATIVE_INFINITY;
-        ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
+        List<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
 
         if (holds_in_proximity.isEmpty()) {
             // Do global holds instead
@@ -286,7 +287,7 @@ public class HoldSuggestionGenerator extends Analyzer {
         }
 
         for (Hold.Type type : types) {
-            double proportion_percentage = (double)(Board.countType(holds_in_proximity, type)) / holds_in_proximity.size();
+            double proportion_percentage = (double) (Board.countType(holds_in_proximity, type)) / holds_in_proximity.size();
             double percentage_diff = m_hold_type_pref_percentages[type.ordinal()] - proportion_percentage;
             if (largest_percentage < percentage_diff) {
                 least_filled_type = type;
@@ -296,11 +297,14 @@ public class HoldSuggestionGenerator extends Analyzer {
         return least_filled_type;
     }
 
-    private Hold.Direction getHoldDirectionBasedOnProximityAndPreference(FlatBoard b, Vector2 position, ArrayList<Hold.Direction> directions) {
+    private Hold.Direction getHoldDirectionBasedOnProximityAndPreference(
+            FlatBoard b,
+            Vector2 position,
+            List<Hold.Direction> directions) {
         Hold.Direction least_filled_type = directions.get(0);
         double hold_vicinity_distance = getProximityDistance(b);
         double largest_percentage = Double.NEGATIVE_INFINITY;
-        ArrayList<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
+        List<Hold> holds_in_proximity = getHoldsInProximity(b, position, hold_vicinity_distance);
 
         if (holds_in_proximity.isEmpty()) {
             // Do global holds instead
@@ -308,7 +312,9 @@ public class HoldSuggestionGenerator extends Analyzer {
         }
 
         for (Hold.Direction dir : directions) {
-            double proportion_percentage = (double)(Board.countDirection(holds_in_proximity, dir)) / holds_in_proximity.size();
+            double proportion_percentage = (double) (Board.countDirection(
+                    holds_in_proximity,
+                    dir)) / holds_in_proximity.size();
             double percentage_diff = m_hold_direction_pref_percentages[dir.ordinal()] - proportion_percentage;
             if (largest_percentage < percentage_diff) {
                 least_filled_type = dir;
@@ -358,13 +364,9 @@ public class HoldSuggestionGenerator extends Analyzer {
         FlatBoard flat_board = new FlatBoard(m_board, m_flat_board_size);
         Hold new_h = new Hold();
 
-        HoldGenerationReturnStatus status = HoldGenerationReturnStatus.FAILURE;
-        if (settings.generateLeastCommonHoldType()) {
-            status = generateLeastCommonTypeHandHoldImpl(flat_board, new_h);
-        } else {
-            Hold.Type type = settings.getHoldTypeToGenerate();
-            status = generateHoldOfType(flat_board, new_h, type);
-        }
+        HoldGenerationReturnStatus status = settings.generateLeastCommonHoldType()
+                ? generateLeastCommonTypeHandHoldImpl(flat_board, new_h)
+                : generateHoldOfType(flat_board, new_h, settings.getHoldTypeToGenerate());
 
         // Make sure to do something on failure,
         // TODO we should probably return the status from this function

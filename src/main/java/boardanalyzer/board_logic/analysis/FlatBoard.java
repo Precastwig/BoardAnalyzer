@@ -1,17 +1,16 @@
 package boardanalyzer.board_logic.analysis;
 
-import boardanalyzer.BoardPanel;
 import boardanalyzer.board_logic.Board;
 import boardanalyzer.board_logic.Hold;
 import boardanalyzer.utils.PerspectiveTransform;
 import boardanalyzer.utils.Vector2;
 
-import java.awt.geom.Point2D;
-import java.util.ArrayList;
+import java.util.List;
 
 public final class FlatBoard extends Board {
     private final PerspectiveTransform m_to_flat;
     private final PerspectiveTransform m_from_flat;
+
     public FlatBoard(Board b, Vector2 flat_board_size) {
         setBoardDimensions(flat_board_size.x, flat_board_size.y);
 
@@ -38,7 +37,7 @@ public final class FlatBoard extends Board {
         }
         setLowestAllowedHandHoldHeight(lowest_height);
 
-        ArrayList<Hold> old_holds = b.getHolds();
+        List<Hold> old_holds = b.getHolds();
         m_holds = transformHolds(old_holds, m_to_flat);
     }
 

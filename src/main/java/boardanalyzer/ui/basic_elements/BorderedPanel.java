@@ -5,14 +5,15 @@ import java.awt.*;
 
 public class BorderedPanel extends JPanel {
     private final JPanel m_inner_panel;
+
     public BorderedPanel() {
         setLayout(new BorderLayout());
         m_inner_panel = new JPanel();
 
-        add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.WEST);
-        add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.EAST);
-        add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.NORTH);
-        add(Box.createRigidArea(new Dimension(20,20)), BorderLayout.SOUTH);
+        add(Box.createRigidArea(new Dimension(20, 20)), BorderLayout.WEST);
+        add(Box.createRigidArea(new Dimension(20, 20)), BorderLayout.EAST);
+        add(Box.createRigidArea(new Dimension(20, 20)), BorderLayout.NORTH);
+        add(Box.createRigidArea(new Dimension(20, 20)), BorderLayout.SOUTH);
         add(m_inner_panel, BorderLayout.CENTER);
     }
 
