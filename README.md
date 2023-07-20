@@ -5,17 +5,17 @@ This tool aims to help one analyze any particular climbing board set, provide su
 
 ## How to "install"
 1. Make sure you have at least java version 17 installed (https://www.oracle.com/uk/java/technologies/downloads/)
-2. Download the latest .zip release and unpack
+2. Download the latest .zip release (from here: https://github.com/Precastwig/BoardAnalyzer/releases) and unpack
 3. Run /bin/BoardAnalyzer.bat on windows
 
 ## How to use
 Since the program is changing quite often, I won't go into details but the jist is:
 1. Create a new board (by clicking the `new board` button)
-2. Give it a name, and give it an image of the board. Ideally the image is as flat as possible
-3. Select the corners of the board in the image
+2. Give it a name, and select an image of your board.
+3. Drag the corners of the black squar to the corners of the board in the image
 4. Input your boards physical dimensions (corresponding to the corners you clicked)
 5. Click on the image to add holds
-6. Use the various analysis tools
+6. Use the various analysis/generation tools
 
 ### Contributing
 If you think this program could be improved, feel free to open a PR.
@@ -51,7 +51,7 @@ If you think this program could be improved, feel free to open a PR.
         - Train AI on moonboard problems
     - Auto hold discovery (I will probably never do this)
 
-##### Why Java?
+#### Why Java?
 This would be more useful to others as a website, but I don't want the faff of hosting a website, and I hate HTML/CSS/Javascript. This project is mainly for my own use, if others find it useful too then that'd be nice.
 
 C++ is fun, until you want to make rapid progress with pre-made GUI elements, then you're faffing around with various garbage, so that's a no-go.
