@@ -33,6 +33,8 @@ If you think this program could be improved, feel free to open a PR.
 - Hold selection:
     - Add "discard changes" button - hotkey to esc
 - UI:
+    - Add a "Would you like to save" window when quitting,
+    	- Make it so it only does this when something has changed since the last time you saved?! (awkward) 
     - Dissallow features until board is fully set up (ie. don't let people use any analysis tools until all corners added and board size has been input)
     - Show errors/warnings in red on info pane, like when saving a hold that's invalid
     - Show progress bar during saving and do on a seperate thread
