@@ -8,6 +8,7 @@ import java.text.DecimalFormat;
 
 public class JNumberField extends JPanel {
     private final JTextField m_text;
+
     public JNumberField() {
         m_text = new JTextField(6);
         m_text.setText("0.0");
@@ -34,11 +35,6 @@ public class JNumberField extends JPanel {
         m_text.setPreferredSize(d);
     }
 
-    public void setNumber(double number) {
-        DecimalFormat formatted_num = new DecimalFormat("#.##");
-        m_text.setText(formatted_num.format(number));
-    }
-
     public double getNumber() {
         try {
             return Double.parseDouble(m_text.getText());
@@ -46,5 +42,10 @@ public class JNumberField extends JPanel {
             System.out.println(e);
             return 0.0;
         }
+    }
+
+    public void setNumber(double number) {
+        DecimalFormat formatted_num = new DecimalFormat("#.##");
+        m_text.setText(formatted_num.format(number));
     }
 }

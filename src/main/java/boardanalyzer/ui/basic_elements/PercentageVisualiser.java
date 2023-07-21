@@ -6,15 +6,17 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.List;
 import java.util.*;
 
 public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implements ActionListener {
-    private final ArrayList<JProgressBar> m_bars;
-    private final ArrayList<JButton> m_highlight_buttons;
-    private final ArrayList<Boolean> m_highlighting;
+    private final List<JProgressBar> m_bars;
+    private final List<JButton> m_highlight_buttons;
+    private final List<Boolean> m_highlighting;
     private final Type[] m_all_types;
     private final Icon m_lightbulb_dim_icon;
     private final Icon m_lightbuilb_lit_icon;
+
     public PercentageVisualiser(Type[] values) {
         setLayout(new GridBagLayout());
         GridBagConstraints constraint = new GridBagConstraints();
@@ -23,7 +25,7 @@ public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implem
         m_highlight_buttons = new ArrayList<>();
         try {
             Image image_dim = ImageIO.read(ClassLoader.getSystemResource("images/lightbulb-dim.png"));
-            Image resized_image_dim = image_dim.getScaledInstance(16, 16,  java.awt.Image.SCALE_SMOOTH);
+            Image resized_image_dim = image_dim.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH);
             m_lightbulb_dim_icon = new ImageIcon(resized_image_dim);
 
             Image image_lit = ImageIO.read(ClassLoader.getSystemResource("images/lightbulb-lit.png"));
@@ -51,7 +53,7 @@ public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implem
                 // I have no idea if this works
                 highlight_button = new JButton("\uD83D\uDCA1");
             }
-            highlight_button.setMargin(new Insets(0,0,0,0));
+            highlight_button.setMargin(new Insets(0, 0, 0, 0));
             highlight_button.setMaximumSize(new Dimension(100, 20));
             highlight_button.setActionCommand("Highlight");
             m_highlight_buttons.add(highlight_button);
@@ -95,7 +97,7 @@ public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implem
             total = total + val;
         }
         for (int i = 0; i < m_all_types.length; i++) {
-            m_bars.get(i).setValue((int)(((double)vals[i] / (double)total) * 100.0));
+            m_bars.get(i).setValue((int) (((double) vals[i] / (double) total) * 100.0));
         }
     }
 
@@ -106,8 +108,8 @@ public class PercentageVisualiser<Type extends Enum<Type>> extends JPanel implem
         }
     }
 
-    public HashMap<Type, Boolean> getHighlightMap() {
-        HashMap<Type, Boolean> map = new HashMap<>();
+    public Map<Type, Boolean> getHighlightMap() {
+        Map<Type, Boolean> map = new HashMap<>();
         for (Type t : m_all_types) {
             map.put(t, m_highlighting.get(t.ordinal()));
         }

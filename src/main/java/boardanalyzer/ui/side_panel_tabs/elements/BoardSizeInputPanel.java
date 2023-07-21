@@ -8,11 +8,12 @@ import javax.swing.*;
 public class BoardSizeInputPanel extends JPanel {
     private final JNumberField m_width_numberfield;
     private final JNumberField m_height_numberfield;
+
     public BoardSizeInputPanel() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         add(Box.createVerticalGlue());
         m_width_numberfield = new JNumberField();
-//        m_width_numberfield.setPreferredSize(new Dimension(width,20));
+        //        m_width_numberfield.setPreferredSize(new Dimension(width,20));
         JPanel width_input = new JPanel();
         width_input.setLayout(new BoxLayout(width_input, BoxLayout.LINE_AXIS));
         JLabel width_label = new JLabel("Width");
@@ -23,7 +24,7 @@ public class BoardSizeInputPanel extends JPanel {
         width_input.setAlignmentX(0.5f);
         add(width_input);
         m_height_numberfield = new JNumberField();
-//        m_height_numberfield.setPreferredSize(new Dimension(width, 20));
+        //        m_height_numberfield.setPreferredSize(new Dimension(width, 20));
         JPanel height_input = new JPanel();
         JLabel height_label = new JLabel("Height");
         height_input.setLayout(new BoxLayout(height_input, BoxLayout.LINE_AXIS));
@@ -38,17 +39,19 @@ public class BoardSizeInputPanel extends JPanel {
         return m_width_numberfield.getNumber();
     }
 
-    public double getBoardHeight() {
-        return m_height_numberfield.getNumber();
-    }
-
-    public Vector2 getBoardSize() {return new Vector2(m_width_numberfield.getNumber(), m_height_numberfield.getNumber());}
-
     public void setBoardWidth(double d) {
         m_width_numberfield.setNumber(d);
     }
 
+    public double getBoardHeight() {
+        return m_height_numberfield.getNumber();
+    }
+
     public void setBoardHeight(double d) {
         m_height_numberfield.setNumber(d);
+    }
+
+    public Vector2 getBoardSize() {
+        return new Vector2(m_width_numberfield.getNumber(), m_height_numberfield.getNumber());
     }
 }

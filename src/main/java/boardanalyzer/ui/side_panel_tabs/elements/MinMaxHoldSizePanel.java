@@ -6,6 +6,7 @@ import java.awt.*;
 public class MinMaxHoldSizePanel extends JPanel {
     private final TextField m_min_textfield;
     private final TextField m_max_textfield;
+
     public MinMaxHoldSizePanel() {
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
         add(new JLabel("Min"));
@@ -26,6 +27,7 @@ public class MinMaxHoldSizePanel extends JPanel {
         // I don't know why this is necessary, it just is. Otherwise, it takes up a BUNCH of vertical space.
         setMaximumSize(new Dimension(300, 20));
     }
+
     public int getHoldSizeMin() throws NumberFormatException {
         int ret = Integer.parseInt(m_min_textfield.getText());
         if (ret < 0) {
@@ -34,6 +36,10 @@ public class MinMaxHoldSizePanel extends JPanel {
             return 10;
         }
         return ret;
+    }
+
+    public void setHoldSizeMin(int min) {
+        m_min_textfield.setText(String.valueOf(min));
     }
 
     public int getHoldSizeMax() throws NumberFormatException {
@@ -49,9 +55,6 @@ public class MinMaxHoldSizePanel extends JPanel {
             return min + 100;
         }
         return ret;
-    }
-    public void setHoldSizeMin(int min) {
-        m_min_textfield.setText(String.valueOf(min));
     }
 
     public void setHoldSizeMax(int max) {

@@ -1,6 +1,9 @@
 package boardanalyzer.ui;
 
-import boardanalyzer.ui.side_panel_tabs.*;
+import boardanalyzer.ui.side_panel_tabs.BoardSettings;
+import boardanalyzer.ui.side_panel_tabs.BoardStatistics;
+import boardanalyzer.ui.side_panel_tabs.HoldGenerationSettings;
+import boardanalyzer.ui.side_panel_tabs.HoldSelectionSettings;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
