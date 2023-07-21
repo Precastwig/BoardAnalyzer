@@ -21,6 +21,7 @@ Since the program is changing quite often, I won't go into details but the jist 
 If you think this program could be improved, feel free to open a PR.
 
 ### To do
+- Move to-do list into git tasks/issues?
 - BoardPanel:
 	- Make the hotkeys actually work
     - Change hold creation input to be "better"
