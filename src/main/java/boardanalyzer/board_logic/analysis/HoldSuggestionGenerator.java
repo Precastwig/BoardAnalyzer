@@ -32,18 +32,18 @@ public class HoldSuggestionGenerator extends Analyzer {
         m_hold_direction_pref_percentages = hold_direction_pref_perc;
     }
 
-    private List<Vector2> cullClosestHalf(FlatBoard b, List<Vector2> holds) {
+    private List<Vector2> cullClosestHalf(FlatBoard b, List<Vector2> positions) {
         // Cull the 50% of points that are closest to their nearest hold
-        if (holds.size() < 5) {
-            return holds;
+        if (positions.size() < 5) {
+            return positions;
         }
         double total_distance = 0;
-        for (Vector2 p : holds) {
+        for (Vector2 p : positions) {
             total_distance += b.getDistanceToNearestHold(p);
         }
-        double average = total_distance / holds.size();
+        double average = total_distance / positions.size();
         List<Vector2> culled_list = new ArrayList<>();
-        for (Vector2 p : holds) {
+        for (Vector2 p : positions) {
             if (b.getDistanceToNearestHold(p) > average) {
                 culled_list.add(p);
             }
@@ -69,6 +69,8 @@ public class HoldSuggestionGenerator extends Analyzer {
                     v -> (v.y < b.getBoardHeight() / 2)
             );
         }
+
+        new_locs = cullClosestHalf(b, new_locs);
 
         Vector2 return_position = new_locs.get(0); // default
         double least_holds_of_type_in_proximity_percentage = 1.0;
